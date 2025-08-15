@@ -172,9 +172,9 @@ class TrailBlogger {
                 `;
                 layer.bindPopup(popupContent);
                 
-                // Add click handler to show trail description
+                // Add click handler to zoom to trail and show description
                 layer.on('click', () => {
-                    this.showTrailDescription(feature.properties.name);
+                    this.zoomToTrail(feature.properties.name);
                 });
             }
         }).addTo(this.map);
@@ -215,6 +215,17 @@ class TrailBlogger {
                 blogPost: "",
                 images: [],
                 coordinates: [[-83.6300, 37.8500], [-83.6250, 37.8480], [-83.6200, 37.8450], [-83.6150, 37.8420]]
+            },
+            {
+                id: 4,
+                name: "Koomer Ridge Loop",
+                length: 3.1,
+                difficulty: "moderate",
+                status: "unhiked",
+                dateHiked: null,
+                blogPost: "",
+                images: [],
+                coordinates: [[-83.6250, 37.8350], [-83.6200, 37.8320], [-83.6150, 37.8300], [-83.6100, 37.8280], [-83.6050, 37.8300], [-83.6100, 37.8320], [-83.6150, 37.8350], [-83.6200, 37.8370], [-83.6250, 37.8350]]
             }
         ];
     }
@@ -246,9 +257,9 @@ class TrailBlogger {
             await this.saveTrail();
         });
         
-        document.getElementById('importForm').addEventListener('submit', (e) => {
+        document.getElementById('importForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            this.importGeoJSON();
+            await this.importGeoJSON();
         });
         
         // Cancel buttons
@@ -258,6 +269,9 @@ class TrailBlogger {
         // Map controls
         document.getElementById('toggleTrailOverlay').addEventListener('click', () => this.toggleTrailOverlay());
         document.getElementById('fullscreenBtn').addEventListener('click', () => this.toggleFullscreen());
+        
+        // Add reset view button if it doesn't exist
+        this.addResetViewButton();
         
         // Image preview
         document.getElementById('trailImages').addEventListener('change', (e) => this.handleImagePreview(e));
@@ -273,6 +287,15 @@ class TrailBlogger {
             if (e.target.classList.contains('modal')) {
                 this.closeModals();
             }
+        });
+        
+        // Clear trail highlight when clicking on empty map area
+        this.map.on('click', (e) => {
+            // Only clear if clicking on the map itself, not on a trail
+            if (e.originalEvent.target.classList.contains('leaflet-interactive')) {
+                return;
+            }
+            this.clearTrailHighlight();
         });
     }
     
@@ -312,12 +335,17 @@ class TrailBlogger {
         }
         
         trailList.innerHTML = filteredTrails.map(trail => `
-            <div class="trail-item ${trail.status}" onclick="trailBlogger.showTrailDescription('${trail.name}')">
+            <div class="trail-item ${trail.status} ${this.selectedTrail && this.selectedTrail.name === trail.name ? 'selected' : ''}" onclick="trailBlogger.selectTrail('${trail.name}')">
                 <div class="trail-name">${trail.name}</div>
                 <div class="trail-info">
                     <span class="trail-length">${trail.length} miles</span> • 
                     <span>${trail.difficulty}</span>
                     ${trail.dateHiked ? ` • <span>${new Date(trail.dateHiked).toLocaleDateString()}</span>` : ''}
+                </div>
+                <div class="trail-actions">
+                    <button class="edit-trail-btn" onclick="event.stopPropagation(); trailBlogger.editTrail('${trail.name}')" title="Edit Trail">
+                        <i class="fas fa-edit"></i>
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -347,6 +375,10 @@ class TrailBlogger {
                 title.textContent = `Edit Trail: ${trail.name}`;
                 this.populateTrailForm(trail);
             }
+        } else if (this.selectedTrail) {
+            // Edit currently selected trail
+            title.textContent = `Edit Trail: ${this.selectedTrail.name}`;
+            this.populateTrailForm(this.selectedTrail);
         } else {
             // Add new trail
             title.textContent = 'Add New Trail';
@@ -374,10 +406,15 @@ class TrailBlogger {
         document.getElementById('trailDate').value = trail.dateHiked || '';
         document.getElementById('trailBlog').value = trail.blogPost;
         
-        // Show existing images
+        // Show existing images with remove buttons
         const imagePreview = document.getElementById('imagePreview');
-        imagePreview.innerHTML = trail.images.map(img => `
-            <img src="${img}" alt="Trail image" />
+        imagePreview.innerHTML = trail.images.map((img, index) => `
+            <div class="image-preview-item">
+                <img src="${img}" alt="Trail image" />
+                <button type="button" class="remove-image-btn" onclick="trailBlogger.removeImage(${index})" title="Remove image">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         `).join('');
     }
     
@@ -388,6 +425,9 @@ class TrailBlogger {
         // Check if this is an edit or new trail
         const existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
         
+        // Get images properly (preserve existing + add new)
+        const images = await this.getImageFiles();
+        
         const trailData = {
             id: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now(),
             name: trailName,
@@ -396,8 +436,10 @@ class TrailBlogger {
             status: formData.get('trailDate') ? 'hiked' : 'unhiked',
             dateHiked: formData.get('trailDate') || null,
             blogPost: formData.get('trailBlog'),
-            images: this.getImageFiles(),
-            coordinates: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].coordinates : []
+            images: images,
+            coordinates: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].coordinates : [],
+            // Preserve original GeoJSON geometry if it exists
+            originalGeoJSON: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].originalGeoJSON : null
         };
         
         if (existingTrailIndex >= 0) {
@@ -416,21 +458,52 @@ class TrailBlogger {
         this.updateStatistics();
         this.renderTrailList();
         this.updateMapTrails();
+        
+        // Update selected trail if it was the one being edited
+        if (this.selectedTrail && this.selectedTrail.name === trailName) {
+            this.selectedTrail = trailData;
+            this.showTrailDescription(trailName);
+        }
     }
     
-    getImageFiles() {
+    async getImageFiles() {
         const imageFiles = document.getElementById('trailImages').files;
         const images = [];
         
+        // First, add any existing images that are already in the preview
+        const existingImages = document.getElementById('imagePreview').querySelectorAll('img');
+        existingImages.forEach(img => {
+            if (img.src && img.src.startsWith('data:')) {
+                images.push(img.src);
+            }
+        });
+        
+        // Then add any new files that were selected
+        const newImagePromises = [];
         for (let i = 0; i < imageFiles.length; i++) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                images.push(e.target.result);
-            };
-            reader.readAsDataURL(imageFiles[i]);
+            const promise = new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    resolve(e.target.result);
+                };
+                reader.readAsDataURL(imageFiles[i]);
+            });
+            newImagePromises.push(promise);
         }
         
+        // Wait for all new images to be processed
+        const newImages = await Promise.all(newImagePromises);
+        images.push(...newImages);
+        
         return images;
+    }
+    
+    removeImage(index) {
+        // Remove the image from the preview
+        const imageItems = document.querySelectorAll('.image-preview-item');
+        if (imageItems[index]) {
+            imageItems[index].remove();
+        }
     }
     
     handleImagePreview(event) {
@@ -465,7 +538,7 @@ class TrailBlogger {
         reader.readAsText(file);
     }
     
-    importGeoJSON() {
+    async importGeoJSON() {
         const file = document.getElementById('geojsonFile').files[0];
         const trailName = document.getElementById('importTrailName').value;
         
@@ -475,32 +548,34 @@ class TrailBlogger {
         }
         
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const geojson = JSON.parse(e.target.result);
+                console.log('Imported GeoJSON:', geojson);
                 
-                // Extract coordinates from GeoJSON
-                let coordinates = [];
+                // Extract trail data from GeoJSON
+                let trailData = null;
+                
                 if (geojson.type === 'Feature') {
-                    coordinates = this.extractCoordinates(geojson.geometry);
+                    trailData = this.extractTrailFromFeature(geojson, trailName);
                 } else if (geojson.type === 'FeatureCollection') {
-                    coordinates = this.extractCoordinates(geojson.features[0].geometry);
+                    // Use the first feature, or you could iterate through all features
+                    trailData = this.extractTrailFromFeature(geojson.features[0], trailName);
                 }
                 
-                // Add new trail
-                const newTrail = {
-                    id: Date.now(),
-                    name: trailName,
-                    length: 0, // Will be calculated
-                    difficulty: 'moderate',
-                    status: 'unhiked',
-                    dateHiked: null,
-                    blogPost: '',
-                    images: [],
-                    coordinates: coordinates
-                };
+                if (!trailData) {
+                    alert('Could not extract trail data from GeoJSON file.');
+                    return;
+                }
                 
-                this.trails.push(newTrail);
+                console.log('Extracted trail data:', trailData);
+                
+                // Add new trail
+                this.trails.push(trailData);
+                
+                // Save to persistent storage
+                await this.saveTrailToFile(trailData);
+                
                 this.closeModals();
                 this.updateStatistics();
                 this.renderTrailList();
@@ -514,6 +589,90 @@ class TrailBlogger {
             }
         };
         reader.readAsText(file);
+    }
+    
+    extractTrailFromFeature(feature, trailName) {
+        if (!feature || !feature.geometry) {
+            console.error('Invalid feature or missing geometry');
+            return null;
+        }
+        
+        // Extract properties from the feature
+        const properties = feature.properties || {};
+        
+        // Extract coordinates based on geometry type
+        let coordinates = [];
+        let length = 0;
+        
+        switch (feature.geometry.type) {
+            case 'LineString':
+                coordinates = feature.geometry.coordinates;
+                length = this.calculateTrailLength(coordinates);
+                break;
+            case 'Polygon':
+                // For polygons, use the outer ring as the trail
+                coordinates = feature.geometry.coordinates[0];
+                length = this.calculateTrailLength(coordinates);
+                break;
+            case 'MultiLineString':
+                // For multi-line strings, flatten all lines into one
+                coordinates = feature.geometry.coordinates.flat();
+                length = this.calculateTrailLength(coordinates);
+                break;
+            case 'MultiPolygon':
+                // For multi-polygons, use the first polygon's outer ring
+                coordinates = feature.geometry.coordinates[0][0];
+                length = this.calculateTrailLength(coordinates);
+                break;
+            default:
+                console.error('Unsupported geometry type:', feature.geometry.type);
+                return null;
+        }
+        
+        // Create trail object with extracted data
+        const trailData = {
+            id: Date.now(),
+            name: trailName,
+            length: length,
+            difficulty: properties.difficulty || properties.DIFFICULTY || 'moderate',
+            status: properties.status || properties.STATUS || 'unhiked',
+            dateHiked: properties.dateHiked || properties.DATE_HIKED || null,
+            blogPost: properties.blogPost || properties.BLOG_POST || properties.description || properties.DESCRIPTION || '',
+            images: properties.images || properties.IMAGES || [],
+            coordinates: coordinates,
+            // Store the original GeoJSON for reference
+            originalGeoJSON: feature
+        };
+        
+        console.log('Extracted trail data:', trailData);
+        return trailData;
+    }
+    
+    calculateTrailLength(coordinates) {
+        if (coordinates.length < 2) return 0;
+        
+        let totalLength = 0;
+        for (let i = 1; i < coordinates.length; i++) {
+            const prev = coordinates[i - 1];
+            const curr = coordinates[i];
+            
+            // Calculate distance between two points using Haversine formula
+            const lat1 = prev[1] * Math.PI / 180;
+            const lat2 = curr[1] * Math.PI / 180;
+            const deltaLat = (curr[1] - prev[1]) * Math.PI / 180;
+            const deltaLng = (curr[0] - prev[0]) * Math.PI / 180;
+            
+            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                     Math.cos(lat1) * Math.cos(lat2) *
+                     Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            
+            // Earth's radius in miles
+            const R = 3959;
+            totalLength += R * c;
+        }
+        
+        return Math.round(totalLength * 10) / 10; // Round to 1 decimal place
     }
     
     extractCoordinates(geometry) {
@@ -533,8 +692,27 @@ class TrailBlogger {
         }
     }
     
+    selectTrail(trailName) {
+        // Zoom to trail and show description
+        this.zoomToTrail(trailName);
+        
+        // Update the header button to show "Edit Trail" instead of "Add Trail"
+        this.updateHeaderButton();
+    }
+    
     editTrail(trailName) {
         this.showTrailModal(trailName);
+    }
+    
+    updateHeaderButton() {
+        const addTrailBtn = document.getElementById('addTrailBtn');
+        if (this.selectedTrail) {
+            addTrailBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Trail';
+            addTrailBtn.title = 'Edit Selected Trail';
+        } else {
+            addTrailBtn.innerHTML = '<i class="fas fa-plus"></i> Add Trail';
+            addTrailBtn.title = 'Add New Trail';
+        }
     }
     
     showTrailDescription(trailName) {
@@ -592,11 +770,110 @@ class TrailBlogger {
         
         // Show description panel
         document.getElementById('descriptionPanel').classList.add('active');
+        
+        // Update header button to show "Edit Trail"
+        this.updateHeaderButton();
     }
     
     closeDescriptionPanel() {
         document.getElementById('descriptionPanel').classList.remove('active');
         this.selectedTrail = null;
+        
+        // Reset header button to "Add Trail"
+        this.updateHeaderButton();
+    }
+    
+    zoomToTrail(trailName) {
+        const trail = this.trails.find(t => t.name === trailName);
+        if (!trail || !trail.coordinates || trail.coordinates.length === 0) {
+            console.warn('Trail not found or no coordinates available:', trailName);
+            console.log('Available trails:', this.trails.map(t => ({ name: t.name, coords: t.coordinates })));
+            return;
+        }
+        
+        console.log('Zooming to trail:', trailName);
+        console.log('Trail coordinates:', trail.coordinates);
+        
+        // Clear previous highlight
+        this.clearTrailHighlight();
+        
+        // The coordinates are already in [lng, lat] format (GeoJSON standard)
+        // Leaflet expects [lat, lng] format, so we need to convert
+        const validCoordinates = trail.coordinates.map(coord => [coord[1], coord[0]]);
+        
+        console.log('Converted coordinates for Leaflet [lat, lng]:', validCoordinates);
+        
+        // Create bounds from trail coordinates
+        const bounds = L.latLngBounds(validCoordinates);
+        
+        console.log('Map bounds:', bounds);
+        
+        // Fly to the trail with some padding
+        this.map.flyToBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 16,
+            duration: 1.5
+        });
+        
+        // Highlight the trail with purple
+        this.highlightTrail(trailName);
+        
+        // Show trail description
+        this.showTrailDescription(trailName);
+    }
+    
+    highlightTrail(trailName) {
+        // Find the trail layer and highlight it
+        if (this.trailOverlay) {
+            this.trailOverlay.eachLayer((layer) => {
+                if (layer.feature && layer.feature.properties.name === trailName) {
+                    // Store original style
+                    layer.originalStyle = {
+                        color: layer.options.color,
+                        weight: layer.options.weight,
+                        opacity: layer.options.opacity
+                    };
+                    
+                    // Apply highlight style with purple color and increased weight
+                    layer.setStyle({
+                        color: '#8B5CF6', // Purple
+                        weight: 8,
+                        opacity: 1,
+                        fillOpacity: 0.2
+                    });
+                    
+                    // Add CSS class for animation
+                    layer.getElement()?.classList.add('trail-highlighted');
+                }
+            });
+        }
+    }
+    
+    clearTrailHighlight() {
+        // Reset all trail styles to original
+        if (this.trailOverlay) {
+            this.trailOverlay.eachLayer((layer) => {
+                // Remove CSS class
+                layer.getElement()?.classList.remove('trail-highlighted');
+                
+                if (layer.originalStyle) {
+                    layer.setStyle(layer.originalStyle);
+                    delete layer.originalStyle;
+                } else {
+                    // Reset to default style based on status
+                    const status = layer.feature.properties.status;
+                    layer.setStyle({
+                        color: status === 'hiked' ? '#28a745' : '#ffc107',
+                        weight: 4,
+                        opacity: 0.8
+                    });
+                }
+            });
+        }
+        
+        // Clear selected trail and reset header button
+        this.selectedTrail = null;
+        this.updateHeaderButton();
     }
     
     openImageModal(imageSrc) {
@@ -636,24 +913,31 @@ class TrailBlogger {
             // Also save as GeoJSON for compatibility
             const geojsonData = {
                 type: "FeatureCollection",
-                features: trails.map(trail => ({
-                    type: "Feature",
-                    properties: {
-                        name: trail.name,
-                        length: trail.length,
-                        difficulty: trail.difficulty,
-                        status: trail.status,
-                        date_hiked: trail.dateHiked,
-                        blog_post: trail.blogPost,
-                        images: trail.images,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    },
-                    geometry: {
-                        type: "LineString",
-                        coordinates: trail.coordinates
-                    }
-                }))
+                features: trails.map(trail => {
+                    // Use original GeoJSON geometry if available, otherwise create LineString
+                    const geometry = trail.originalGeoJSON && trail.originalGeoJSON.geometry 
+                        ? trail.originalGeoJSON.geometry 
+                        : {
+                            type: "LineString",
+                            coordinates: trail.coordinates
+                        };
+                    
+                    return {
+                        type: "Feature",
+                        properties: {
+                            name: trail.name,
+                            length: trail.length,
+                            difficulty: trail.difficulty,
+                            status: trail.status,
+                            date_hiked: trail.dateHiked,
+                            blog_post: trail.blogPost,
+                            images: trail.images,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        },
+                        geometry: geometry
+                    };
+                })
             };
             
             localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
@@ -672,7 +956,11 @@ class TrailBlogger {
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
             if (trails.length > 0) {
                 this.trails = trails;
-                console.log(`Loaded ${trails.length} trails from storage`);
+                console.log(`Loaded ${trails.length} trails from storage:`, trails.map(t => t.name));
+                
+                // Update the map with loaded trails
+                this.updateMapTrails();
+                
                 return true;
             }
             return false;
@@ -691,20 +979,39 @@ class TrailBlogger {
         // Create new GeoJSON from trails data
         const geojsonData = {
             type: "FeatureCollection",
-            features: this.trails.map(trail => ({
-                type: "Feature",
-                properties: {
-                    name: trail.name,
-                    difficulty: trail.difficulty,
-                    length: trail.length,
-                    status: trail.status
-                },
-                geometry: {
-                    type: "LineString",
-                    coordinates: trail.coordinates
+            features: this.trails.map(trail => {
+                // If the trail has original GeoJSON, use that geometry
+                if (trail.originalGeoJSON && trail.originalGeoJSON.geometry) {
+                    return {
+                        type: "Feature",
+                        properties: {
+                            name: trail.name,
+                            difficulty: trail.difficulty,
+                            length: trail.length,
+                            status: trail.status
+                        },
+                        geometry: trail.originalGeoJSON.geometry
+                    };
+                } else {
+                    // Fallback to LineString for trails without original GeoJSON
+                    return {
+                        type: "Feature",
+                        properties: {
+                            name: trail.name,
+                            difficulty: trail.difficulty,
+                            length: trail.length,
+                            status: trail.status
+                        },
+                        geometry: {
+                            type: "LineString",
+                            coordinates: trail.coordinates
+                        }
+                    };
                 }
-            }))
+            })
         };
+        
+        console.log('Updated GeoJSON data:', geojsonData);
         
         // Add updated trail overlay
         this.trailOverlay = L.geoJSON(geojsonData, {
@@ -732,7 +1039,7 @@ class TrailBlogger {
                 layer.bindPopup(popupContent);
                 
                 layer.on('click', () => {
-                    this.editTrail(feature.properties.name);
+                    this.zoomToTrail(feature.properties.name);
                 });
             }
         }).addTo(this.map);
@@ -755,6 +1062,70 @@ class TrailBlogger {
         } else {
             document.exitFullscreen();
         }
+    }
+    
+    addResetViewButton() {
+        const mapControls = document.querySelector('.map-controls');
+        if (!document.getElementById('resetViewBtn')) {
+            const resetBtn = document.createElement('button');
+            resetBtn.id = 'resetViewBtn';
+            resetBtn.className = 'map-btn';
+            resetBtn.title = 'Reset View';
+            resetBtn.innerHTML = '<i class="fas fa-home"></i>';
+            resetBtn.addEventListener('click', () => this.resetMapView());
+            mapControls.appendChild(resetBtn);
+        }
+        
+        // Add debug button (only in development)
+        if (!document.getElementById('debugBtn')) {
+            const debugBtn = document.createElement('button');
+            debugBtn.id = 'debugBtn';
+            debugBtn.className = 'map-btn';
+            debugBtn.title = 'Debug Info';
+            debugBtn.innerHTML = '<i class="fas fa-bug"></i>';
+            debugBtn.addEventListener('click', () => this.showStoredData());
+            mapControls.appendChild(debugBtn);
+        }
+    }
+    
+    resetMapView() {
+        const park = this.parks[this.currentPark];
+        this.map.flyTo(park.center, park.zoom, {
+            duration: 1.5
+        });
+        this.clearTrailHighlight();
+        this.closeDescriptionPanel();
+    }
+    
+    // Debug method to clear all stored data
+    clearAllData() {
+        localStorage.removeItem('trailBlogger_trails');
+        localStorage.removeItem('trailBlogger_geojson');
+        this.trails = [];
+        this.updateStatistics();
+        this.renderTrailList();
+        this.updateMapTrails();
+        console.log('All trail data cleared');
+    }
+    
+    // Debug method to show current stored data
+    showStoredData() {
+        const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+        console.log('Stored trails:', trails);
+        console.log('Current trails in memory:', this.trails);
+        
+        // Test coordinate conversion for each trail
+        this.trails.forEach(trail => {
+            console.log(`\nTrail: ${trail.name}`);
+            console.log('Original coordinates [lng, lat]:', trail.coordinates);
+            const converted = trail.coordinates.map(coord => [coord[1], coord[0]]);
+            console.log('Converted coordinates [lat, lng]:', converted);
+            
+            // Test bounds creation
+            const bounds = L.latLngBounds(converted);
+            console.log('Bounds:', bounds);
+            console.log('Bounds center:', bounds.getCenter());
+        });
     }
 }
 
