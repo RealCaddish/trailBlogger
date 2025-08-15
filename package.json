@@ -1,0 +1,20 @@
+{
+  "name": "trail-blogger",
+  "version": "1.0.0",
+  "description": "A hiking journal web map application for tracking trails and blog posts",
+  "main": "index.js",
+  "scripts": {
+    "start": "live-server --port=3000 --open=/index.html",
+    "dev": "live-server --port=3000 --open=/index.html",
+    "build": "echo 'Build complete'"
+  },
+  "keywords": ["hiking", "trails", "mapping", "journal", "geojson"],
+  "author": "Trail Blogger",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  }
+}

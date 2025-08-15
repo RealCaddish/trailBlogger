@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Blogger - Hiking Journal</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-mountain"></i> Trail Blogger</h1>
+                <div class="header-controls">
+                    <button id="importBtn" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Import Trail
+                    </button>
+                    <button id="addTrailBtn" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i> Add Trail
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Trail Selection</h3>
+                    <select id="parkSelect" class="form-select">
+                        <option value="red-river-gorge">Red River Gorge</option>
+                        <option value="other-park">Other Parks...</option>
+                    </select>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Trail List</h3>
+                    <div class="trail-filters">
+                        <button id="showAll" class="filter-btn active">All</button>
+                        <button id="showHiked" class="filter-btn">Hiked</button>
+                        <button id="showUnhiked" class="filter-btn">Unhiked</button>
+                    </div>
+                    <div id="trailList" class="trail-list">
+                        <!-- Trail items will be populated here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Statistics</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Trails:</span>
+                            <span id="totalTrails" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Hiked:</span>
+                            <span id="hikedTrails" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Miles:</span>
+                            <span id="totalMiles" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Map Container -->
+            <main class="map-container">
+                <div id="map"></div>
+                
+                <!-- Map Controls -->
+                <div class="map-controls">
+                    <button id="toggleTrailOverlay" class="map-btn" title="Toggle Trail Overlay">
+                        <i class="fas fa-layer-group"></i>
+                    </button>
+                    <button id="fullscreenBtn" class="map-btn" title="Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- Trail Detail Modal -->
+        <div id="trailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Trail Details</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="trailForm">
+                        <div class="form-group">
+                            <label for="trailName">Trail Name:</label>
+                            <input type="text" id="trailName" name="trailName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="trailLength">Length (miles):</label>
+                            <input type="number" id="trailLength" name="trailLength" step="0.1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="trailDifficulty">Difficulty:</label>
+                            <select id="trailDifficulty" name="trailDifficulty">
+                                <option value="easy">Easy</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="difficult">Difficult</option>
+                                <option value="expert">Expert</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="trailDate">Date Hiked:</label>
+                            <input type="date" id="trailDate" name="trailDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="trailBlog">Blog Post:</label>
+                            <textarea id="trailBlog" name="trailBlog" rows="6" placeholder="Write about your hiking experience..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="trailImages">Images:</label>
+                            <input type="file" id="trailImages" name="trailImages" multiple accept="image/*">
+                            <div id="imagePreview" class="image-preview"></div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Trail</button>
+                            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div id="importModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Import GeoJSON Trail</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm">
+                        <div class="form-group">
+                            <label for="geojsonFile">Select GeoJSON File:</label>
+                            <input type="file" id="geojsonFile" name="geojsonFile" accept=".geojson,.json" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="importTrailName">Trail Name:</label>
+                            <input type="text" id="importTrailName" name="importTrailName" required>
+                        </div>
+                        
+                        <div id="geojsonPreview" class="geojson-preview"></div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Import Trail</button>
+                            <button type="button" class="btn btn-secondary" id="importCancelBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>

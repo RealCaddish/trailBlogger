@@ -1,0 +1,24 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Sample Trail",
+    "difficulty": "moderate",
+    "length": 2.5,
+    "description": "A sample trail for testing the import functionality"
+  },
+  "geometry": {
+    "type": "LineString",
+    "coordinates": [
+      [-83.6167, 37.8333],
+      [-83.6150, 37.8320],
+      [-83.6130, 37.8300],
+      [-83.6110, 37.8280],
+      [-83.6090, 37.8260],
+      [-83.6070, 37.8240],
+      [-83.6050, 37.8220],
+      [-83.6030, 37.8200],
+      [-83.6010, 37.8180],
+      [-83.5990, 37.8160]
+    ]
+  }
+}
