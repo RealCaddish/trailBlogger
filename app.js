@@ -144,6 +144,7 @@ class TrailBlogger {
         // Modal controls
         document.getElementById('addTrailBtn').addEventListener('click', () => this.showTrailModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
+        document.getElementById('backupBtn').addEventListener('click', () => this.createBackup());
         
         // Close modals
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -238,7 +239,8 @@ class TrailBlogger {
                 <div class="trail-name">${trail.name}</div>
                 <div class="trail-info">
                     <span class="trail-length">${trail.length} miles</span> • 
-                    <span>${trail.difficulty}</span>
+                    <span>${trail.difficulty}</span> • 
+                    <span class="trail-status">${trail.status}</span>
                     ${trail.dateHiked ? ` • <span>${new Date(trail.dateHiked).toLocaleDateString()}</span>` : ''}
                 </div>
                 <div class="trail-actions">
@@ -302,6 +304,7 @@ class TrailBlogger {
         document.getElementById('trailName').value = trail.name;
         document.getElementById('trailLength').value = trail.length;
         document.getElementById('trailDifficulty').value = trail.difficulty;
+        document.getElementById('trailStatus').value = trail.status;
         document.getElementById('trailDate').value = trail.dateHiked || '';
         document.getElementById('trailBlog').value = trail.blogPost;
         
@@ -332,7 +335,7 @@ class TrailBlogger {
             name: trailName,
             length: parseFloat(formData.get('trailLength')),
             difficulty: formData.get('trailDifficulty'),
-            status: formData.get('trailDate') ? 'hiked' : 'unhiked',
+            status: formData.get('trailStatus'),
             dateHiked: formData.get('trailDate') || null,
             blogPost: formData.get('trailBlog'),
             images: images,
@@ -631,6 +634,9 @@ class TrailBlogger {
     }
     
     selectTrail(trailName) {
+        // Clear any existing highlight first
+        this.clearTrailHighlight();
+        
         // Zoom to trail and show description
         this.zoomToTrail(trailName);
         
@@ -732,9 +738,6 @@ class TrailBlogger {
         console.log('Zooming to trail:', trailName);
         console.log('Trail coordinates:', trail.coordinates);
         
-        // Clear previous highlight
-        this.clearTrailHighlight();
-        
         // The coordinates are already in [lng, lat] format (GeoJSON standard)
         // Leaflet expects [lat, lng] format, so we need to convert
         const validCoordinates = trail.coordinates.map(coord => [coord[1], coord[0]]);
@@ -761,7 +764,7 @@ class TrailBlogger {
     }
     
     highlightTrail(trailName) {
-        // Find the trail layer and highlight it
+        // Find the trail layer and highlight it with purple color
         if (this.trailOverlay) {
             this.trailOverlay.eachLayer((layer) => {
                 if (layer.feature && layer.feature.properties.name === trailName) {
@@ -794,18 +797,16 @@ class TrailBlogger {
                 // Remove CSS class
                 layer.getElement()?.classList.remove('trail-highlighted');
                 
-                if (layer.originalStyle) {
-                    layer.setStyle(layer.originalStyle);
-                    delete layer.originalStyle;
-                } else {
-                    // Reset to default style based on status
-                    const status = layer.feature.properties.status;
-                    layer.setStyle({
-                        color: status === 'hiked' ? '#28a745' : '#ffc107',
-                        weight: 4,
-                        opacity: 0.8
-                    });
-                }
+                // Always reset to default style based on status
+                const status = layer.feature.properties.status;
+                layer.setStyle({
+                    color: status === 'hiked' ? '#28a745' : '#ffc107',
+                    weight: 4,
+                    opacity: 0.8
+                });
+                
+                // Clear any stored original style
+                delete layer.originalStyle;
             });
         }
         
@@ -1075,6 +1076,55 @@ class TrailBlogger {
             console.log('Bounds:', bounds);
             console.log('Bounds center:', bounds.getCenter());
         });
+    }
+    
+    // Backup functionality
+    async createBackup() {
+        try {
+            console.log('Creating backup of trail data...');
+            
+            // Get all trail data
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            const geojson = JSON.parse(localStorage.getItem('trailBlogger_geojson') || '{"type":"FeatureCollection","features":[]}');
+            
+            // Create backup object
+            const backupData = {
+                timestamp: new Date().toISOString(),
+                version: '1.0',
+                trails: trails,
+                geojson: geojson,
+                statistics: {
+                    totalTrails: trails.length,
+                    hikedTrails: trails.filter(t => t.status === 'hiked').length,
+                    totalMiles: trails.filter(t => t.status === 'hiked').reduce((sum, t) => sum + t.length, 0)
+                }
+            };
+            
+            // Create downloadable file
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `trailblogger_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.style.display = 'none';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up
+            URL.revokeObjectURL(link.href);
+            
+            console.log('Backup created successfully');
+            alert('Backup created successfully! Your trail data has been saved locally.');
+            
+        } catch (error) {
+            console.error('Error creating backup:', error);
+            alert('Error creating backup. Please try again.');
+        }
     }
 }
 

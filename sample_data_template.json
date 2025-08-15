@@ -1,0 +1,29 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sample Trail Name",
+        "length": 2.5,
+        "difficulty": "moderate",
+        "status": "unhiked",
+        "date_hiked": null,
+        "blog_post": "Sample blog post description. Replace with your own trail experiences.",
+        "images": [],
+        "trail_id": 1234567890,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-83.6167, 37.8333],
+          [-83.6100, 37.8300],
+          [-83.6050, 37.8280],
+          [-83.6000, 37.8250]
+        ]
+      }
+    }
+  ]
+}

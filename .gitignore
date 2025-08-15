@@ -151,13 +151,47 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Application specific
+# Application specific - Personal Data (DO NOT COMMIT)
 data/
 uploads/
 images/
 *.db
 *.sqlite
 *.sqlite3
+
+# Trail Blogger specific data directories
+data/
+data/images/
+data/backup_*/
+data/trails.geojson
+data/user_data/
+data/user_images/
+data/user_backups/
+
+# User uploaded content
+uploads/
+user_uploads/
+trail_images/
+journal_entries/
+user_photos/
+
+# Local configuration and personal settings
+config.local.js
+settings.local.json
+user_preferences.json
+personal_data.json
+
+# Backup files created by the application
+*.backup
+backup_*.json
+trailblogger_backup_*.json
+user_backup_*.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
 
 # Build outputs
 build/
