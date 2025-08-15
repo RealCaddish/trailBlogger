@@ -84,70 +84,11 @@ class TrailBlogger {
     }
     
     loadTrailOverlay() {
-        // For Red River Gorge, we'll create a sample trail overlay
-        // In a real application, you would load this from a georeferenced image or GeoJSON
-        const redRiverGorgeTrails = {
+        // Start with empty trail overlay - trails will be added dynamically
+        this.trailOverlay = L.geoJSON({
             type: "FeatureCollection",
-            features: [
-                {
-                    type: "Feature",
-                    properties: {
-                        name: "Natural Bridge Trail",
-                        difficulty: "easy",
-                        length: 0.75,
-                        status: "hiked"
-                    },
-                    geometry: {
-                        type: "LineString",
-                        coordinates: [
-                            [-83.6167, 37.8333],
-                            [-83.6100, 37.8300],
-                            [-83.6050, 37.8280],
-                            [-83.6000, 37.8250]
-                        ]
-                    }
-                },
-                {
-                    type: "Feature",
-                    properties: {
-                        name: "Gray's Arch Trail",
-                        difficulty: "moderate",
-                        length: 1.5,
-                        status: "unhiked"
-                    },
-                    geometry: {
-                        type: "LineString",
-                        coordinates: [
-                            [-83.6200, 37.8400],
-                            [-83.6150, 37.8380],
-                            [-83.6100, 37.8350],
-                            [-83.6050, 37.8320]
-                        ]
-                    }
-                },
-                {
-                    type: "Feature",
-                    properties: {
-                        name: "Indian Staircase",
-                        difficulty: "difficult",
-                        length: 2.2,
-                        status: "unhiked"
-                    },
-                    geometry: {
-                        type: "LineString",
-                        coordinates: [
-                            [-83.6300, 37.8500],
-                            [-83.6250, 37.8480],
-                            [-83.6200, 37.8450],
-                            [-83.6150, 37.8420]
-                        ]
-                    }
-                }
-            ]
-        };
-        
-        // Add the trail overlay to the map
-        this.trailOverlay = L.geoJSON(redRiverGorgeTrails, {
+            features: []
+        }, {
             style: (feature) => {
                 const status = feature.properties.status;
                 return {
@@ -178,56 +119,14 @@ class TrailBlogger {
                 });
             }
         }).addTo(this.map);
+        
+        console.log('Empty trail overlay initialized - ready for imported trails');
     }
     
     loadSampleData() {
-        // Load sample trail data
-        this.trails = [
-            {
-                id: 1,
-                name: "Natural Bridge Trail",
-                length: 0.75,
-                difficulty: "easy",
-                status: "hiked",
-                dateHiked: "2024-01-15",
-                blogPost: "Beautiful short trail leading to the iconic Natural Bridge. The views from the top were spectacular, especially during sunset. The trail was well-maintained and perfect for families.",
-                images: [],
-                coordinates: [[-83.6167, 37.8333], [-83.6100, 37.8300], [-83.6050, 37.8280], [-83.6000, 37.8250]]
-            },
-            {
-                id: 2,
-                name: "Gray's Arch Trail",
-                length: 1.5,
-                difficulty: "moderate",
-                status: "unhiked",
-                dateHiked: null,
-                blogPost: "",
-                images: [],
-                coordinates: [[-83.6200, 37.8400], [-83.6150, 37.8380], [-83.6100, 37.8350], [-83.6050, 37.8320]]
-            },
-            {
-                id: 3,
-                name: "Indian Staircase",
-                length: 2.2,
-                difficulty: "difficult",
-                status: "unhiked",
-                dateHiked: null,
-                blogPost: "",
-                images: [],
-                coordinates: [[-83.6300, 37.8500], [-83.6250, 37.8480], [-83.6200, 37.8450], [-83.6150, 37.8420]]
-            },
-            {
-                id: 4,
-                name: "Koomer Ridge Loop",
-                length: 3.1,
-                difficulty: "moderate",
-                status: "unhiked",
-                dateHiked: null,
-                blogPost: "",
-                images: [],
-                coordinates: [[-83.6250, 37.8350], [-83.6200, 37.8320], [-83.6150, 37.8300], [-83.6100, 37.8280], [-83.6050, 37.8300], [-83.6100, 37.8320], [-83.6150, 37.8350], [-83.6200, 37.8370], [-83.6250, 37.8350]]
-            }
-        ];
+        // Start with empty trail data - no placeholder trails
+        this.trails = [];
+        console.log('No sample trails loaded - ready for user data');
     }
     
     setupEventListeners() {
@@ -547,20 +446,33 @@ class TrailBlogger {
             return;
         }
         
+        console.log('Starting GeoJSON import for trail:', trailName);
+        console.log('File details:', { name: file.name, size: file.size, type: file.type });
+        
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
                 const geojson = JSON.parse(e.target.result);
-                console.log('Imported GeoJSON:', geojson);
+                console.log('Successfully parsed GeoJSON:', geojson);
+                console.log('GeoJSON type:', geojson.type);
                 
                 // Extract trail data from GeoJSON
                 let trailData = null;
                 
                 if (geojson.type === 'Feature') {
+                    console.log('Processing single Feature');
                     trailData = this.extractTrailFromFeature(geojson, trailName);
                 } else if (geojson.type === 'FeatureCollection') {
-                    // Use the first feature, or you could iterate through all features
-                    trailData = this.extractTrailFromFeature(geojson.features[0], trailName);
+                    console.log('Processing FeatureCollection with', geojson.features.length, 'features');
+                    if (geojson.features.length > 0) {
+                        trailData = this.extractTrailFromFeature(geojson.features[0], trailName);
+                    } else {
+                        alert('FeatureCollection contains no features.');
+                        return;
+                    }
+                } else {
+                    alert('Unsupported GeoJSON type. Please use Feature or FeatureCollection.');
+                    return;
                 }
                 
                 if (!trailData) {
@@ -568,26 +480,36 @@ class TrailBlogger {
                     return;
                 }
                 
-                console.log('Extracted trail data:', trailData);
+                console.log('Successfully extracted trail data:', trailData);
+                console.log('Trail coordinates:', trailData.coordinates);
+                console.log('Calculated length:', trailData.length, 'miles');
                 
                 // Add new trail
                 this.trails.push(trailData);
+                console.log('Trail added to memory. Total trails:', this.trails.length);
                 
                 // Save to persistent storage
-                await this.saveTrailToFile(trailData);
+                const saveResult = await this.saveTrailToFile(trailData);
+                console.log('Save result:', saveResult);
                 
                 this.closeModals();
                 this.updateStatistics();
                 this.renderTrailList();
                 this.updateMapTrails();
                 
-                alert('Trail imported successfully!');
+                alert(`Trail "${trailName}" imported successfully!\nLength: ${trailData.length} miles\nCoordinates: ${trailData.coordinates.length} points`);
                 
             } catch (error) {
                 console.error('Error importing GeoJSON:', error);
-                alert('Error importing GeoJSON file. Please check the format.');
+                alert('Error importing GeoJSON file. Please check the format and try again.\n\nError: ' + error.message);
             }
         };
+        
+        reader.onerror = (error) => {
+            console.error('FileReader error:', error);
+            alert('Error reading the file. Please try again.');
+        };
+        
         reader.readAsText(file);
     }
     
@@ -597,8 +519,12 @@ class TrailBlogger {
             return null;
         }
         
+        console.log('Extracting trail from feature:', feature);
+        console.log('Geometry type:', feature.geometry.type);
+        
         // Extract properties from the feature
         const properties = feature.properties || {};
+        console.log('Feature properties:', properties);
         
         // Extract coordinates based on geometry type
         let coordinates = [];
@@ -607,27 +533,39 @@ class TrailBlogger {
         switch (feature.geometry.type) {
             case 'LineString':
                 coordinates = feature.geometry.coordinates;
+                console.log('LineString coordinates:', coordinates);
                 length = this.calculateTrailLength(coordinates);
                 break;
             case 'Polygon':
                 // For polygons, use the outer ring as the trail
                 coordinates = feature.geometry.coordinates[0];
+                console.log('Polygon outer ring coordinates:', coordinates);
                 length = this.calculateTrailLength(coordinates);
                 break;
             case 'MultiLineString':
                 // For multi-line strings, flatten all lines into one
                 coordinates = feature.geometry.coordinates.flat();
+                console.log('MultiLineString flattened coordinates:', coordinates);
                 length = this.calculateTrailLength(coordinates);
                 break;
             case 'MultiPolygon':
                 // For multi-polygons, use the first polygon's outer ring
                 coordinates = feature.geometry.coordinates[0][0];
+                console.log('MultiPolygon first outer ring coordinates:', coordinates);
                 length = this.calculateTrailLength(coordinates);
                 break;
             default:
                 console.error('Unsupported geometry type:', feature.geometry.type);
                 return null;
         }
+        
+        if (coordinates.length === 0) {
+            console.error('No coordinates extracted from geometry');
+            return null;
+        }
+        
+        console.log('Final coordinates array length:', coordinates.length);
+        console.log('Calculated trail length:', length, 'miles');
         
         // Create trail object with extracted data
         const trailData = {
@@ -644,7 +582,7 @@ class TrailBlogger {
             originalGeoJSON: feature
         };
         
-        console.log('Extracted trail data:', trailData);
+        console.log('Successfully created trail data object:', trailData);
         return trailData;
     }
     
@@ -897,18 +835,24 @@ class TrailBlogger {
     // Data persistence methods
     async saveTrailToFile(trailData) {
         try {
-            // For now, we'll use localStorage as a fallback
-            // In a real application, you'd make an API call to your Python backend
+            console.log('Saving trail data to localStorage:', trailData.name);
+            
+            // Load existing trails from localStorage
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            console.log('Existing trails in localStorage:', trails.length);
             
             const existingIndex = trails.findIndex(t => t.name === trailData.name);
             if (existingIndex >= 0) {
+                console.log('Updating existing trail at index:', existingIndex);
                 trails[existingIndex] = trailData;
             } else {
+                console.log('Adding new trail to localStorage');
                 trails.push(trailData);
             }
             
+            // Save updated trails array
             localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
+            console.log('Trails array saved to localStorage. Total trails:', trails.length);
             
             // Also save as GeoJSON for compatibility
             const geojsonData = {
@@ -941,11 +885,16 @@ class TrailBlogger {
             };
             
             localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
+            console.log('GeoJSON data saved to localStorage');
             
-            console.log('Trail data saved successfully');
+            // Verify the save worked
+            const savedTrails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            console.log('Verification: trails in localStorage after save:', savedTrails.length);
+            
+            console.log('Trail data saved successfully to localStorage');
             return true;
         } catch (error) {
-            console.error('Error saving trail data:', error);
+            console.error('Error saving trail data to localStorage:', error);
             return false;
         }
     }
