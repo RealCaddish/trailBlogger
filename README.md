@@ -17,22 +17,44 @@ A modern web application for tracking hiking trails, recording experiences, and 
 ### Prerequisites
 
 - Node.js (version 14 or higher)
+- Python 3.7 or higher
 - A modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
 
 1. Clone or download this repository
-2. Install dependencies:
+2. Install Node.js dependencies:
    ```bash
    npm install
    ```
 
-3. Start the development server:
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Choose your preferred way to run the application:
+
+   **Option A: Frontend Only (Development)**
    ```bash
    npm start
    ```
+   Then open `http://localhost:3000`
 
-4. Open your browser and navigate to `http://localhost:3000`
+   **Option B: Full Stack (Recommended)**
+   ```bash
+   npm run server
+   ```
+   Then open `http://localhost:5000`
+
+### Data Persistence
+
+The application now supports two modes of data storage:
+
+1. **Local Storage (Frontend Only)**: Data is stored in the browser's localStorage
+2. **File-based Storage (Full Stack)**: Data is saved as GeoJSON files using the Python backend
+
+For production use, the Python backend provides better data persistence and API capabilities.
 
 ## How to Use
 
@@ -43,7 +65,8 @@ A modern web application for tracking hiking trails, recording experiences, and 
    - Green: Hiked trails
    - Yellow: Unhiked trails
 3. **Filter Trails**: Use the filter buttons to show All, Hiked, or Unhiked trails
-4. **Trail Details**: Click on any trail on the map or in the sidebar to view/edit details
+4. **Trail Details**: Click on any trail on the map or in the sidebar to view trail details in the description panel
+5. **Description Panel**: The right-side panel shows detailed information about the selected trail, including photos and blog posts
 
 ### Adding Trails
 
@@ -119,12 +142,17 @@ To add official trail maps as overlays:
 
 ```
 trailBlogger/
-├── index.html          # Main HTML file
-├── styles.css          # CSS styling
-├── app.js              # Main JavaScript application
-├── package.json        # Project dependencies
-├── sample-trail.geojson # Sample GeoJSON file for testing
-└── README.md           # This file
+├── index.html              # Main HTML file
+├── styles.css              # CSS styling
+├── app.js                  # Main JavaScript application
+├── package.json            # Node.js dependencies
+├── requirements.txt        # Python dependencies
+├── server.py              # Flask web server
+├── data_manager.py        # Python data management
+├── sample-trail.geojson   # Sample GeoJSON file for testing
+├── .gitignore             # Git ignore rules
+├── data/                  # Data storage directory (created automatically)
+└── README.md              # This file
 ```
 
 ## Customization

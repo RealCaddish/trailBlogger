@@ -6,6 +6,7 @@ class TrailBlogger {
         this.currentPark = 'red-river-gorge';
         this.trailOverlay = null;
         this.currentFilter = 'all';
+        this.selectedTrail = null;
         
         // Park boundaries and center coordinates
         this.parks = {
@@ -23,41 +24,63 @@ class TrailBlogger {
         this.init();
     }
     
-    init() {
-        this.initializeMap();
-        this.loadSampleData();
-        this.setupEventListeners();
-        this.updateStatistics();
-        this.renderTrailList();
+    async init() {
+        try {
+            console.log('Initializing Trail Blogger...');
+            this.initializeMap();
+            console.log('Map initialized successfully');
+            
+            // Try to load data from storage first
+            const loadedFromStorage = await this.loadTrailsFromFile();
+            if (!loadedFromStorage) {
+                console.log('Loading sample data...');
+                this.loadSampleData();
+            }
+            
+            this.setupEventListeners();
+            this.updateStatistics();
+            this.renderTrailList();
+            console.log('Trail Blogger initialization complete');
+        } catch (error) {
+            console.error('Error during initialization:', error);
+        }
     }
     
     initializeMap() {
-        // Initialize the map
-        this.map = L.map('map').setView(
-            this.parks[this.currentPark].center, 
-            this.parks[this.currentPark].zoom
-        );
-        
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(this.map);
-        
-        // Add satellite imagery option
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri',
-            maxZoom: 19
-        });
-        
-        // Add topographic map option
-        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenTopoMap',
-            maxZoom: 17
-        });
-        
-        // Load georeferenced trail overlay for Red River Gorge
-        this.loadTrailOverlay();
+        try {
+            console.log('Creating map...');
+            // Initialize the map
+            this.map = L.map('map').setView(
+                this.parks[this.currentPark].center, 
+                this.parks[this.currentPark].zoom
+            );
+            console.log('Map created successfully');
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(this.map);
+            console.log('OpenStreetMap tiles added');
+            
+            // Add satellite imagery option
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri',
+                maxZoom: 19
+            });
+            
+            // Add topographic map option
+            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenTopoMap',
+                maxZoom: 17
+            });
+            
+            // Load georeferenced trail overlay for Red River Gorge
+            this.loadTrailOverlay();
+            console.log('Trail overlay loaded');
+        } catch (error) {
+            console.error('Error initializing map:', error);
+        }
     }
     
     loadTrailOverlay() {
@@ -149,9 +172,9 @@ class TrailBlogger {
                 `;
                 layer.bindPopup(popupContent);
                 
-                // Add click handler to edit trail
+                // Add click handler to show trail description
                 layer.on('click', () => {
-                    this.editTrail(feature.properties.name);
+                    this.showTrailDescription(feature.properties.name);
                 });
             }
         }).addTo(this.map);
@@ -218,9 +241,9 @@ class TrailBlogger {
         });
         
         // Form submissions
-        document.getElementById('trailForm').addEventListener('submit', (e) => {
+        document.getElementById('trailForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            this.saveTrail();
+            await this.saveTrail();
         });
         
         document.getElementById('importForm').addEventListener('submit', (e) => {
@@ -241,6 +264,9 @@ class TrailBlogger {
         
         // GeoJSON file preview
         document.getElementById('geojsonFile').addEventListener('change', (e) => this.handleGeoJSONPreview(e));
+        
+        // Description panel controls
+        document.getElementById('closeDescription').addEventListener('click', () => this.closeDescriptionPanel());
         
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
@@ -286,7 +312,7 @@ class TrailBlogger {
         }
         
         trailList.innerHTML = filteredTrails.map(trail => `
-            <div class="trail-item ${trail.status}" onclick="trailBlogger.editTrail('${trail.name}')">
+            <div class="trail-item ${trail.status}" onclick="trailBlogger.showTrailDescription('${trail.name}')">
                 <div class="trail-name">${trail.name}</div>
                 <div class="trail-info">
                     <span class="trail-length">${trail.length} miles</span> • 
@@ -355,7 +381,7 @@ class TrailBlogger {
         `).join('');
     }
     
-    saveTrail() {
+    async saveTrail() {
         const formData = new FormData(document.getElementById('trailForm'));
         const trailName = formData.get('trailName');
         
@@ -383,6 +409,10 @@ class TrailBlogger {
         }
         
         this.closeModals();
+        
+        // Save to persistent storage
+        await this.saveTrailToFile(trailData);
+        
         this.updateStatistics();
         this.renderTrailList();
         this.updateMapTrails();
@@ -505,6 +535,151 @@ class TrailBlogger {
     
     editTrail(trailName) {
         this.showTrailModal(trailName);
+    }
+    
+    showTrailDescription(trailName) {
+        const trail = this.trails.find(t => t.name === trailName);
+        if (!trail) return;
+        
+        this.selectedTrail = trail;
+        
+        // Update description panel
+        document.getElementById('descriptionTitle').textContent = trail.name;
+        document.getElementById('trailDifficulty').textContent = trail.difficulty;
+        document.getElementById('trailLength').textContent = `${trail.length} miles`;
+        document.getElementById('trailStatus').textContent = trail.status;
+        
+        // Update description content
+        const description = document.getElementById('trailDescription');
+        if (trail.blogPost) {
+            description.innerHTML = `<p>${trail.blogPost}</p>`;
+        } else {
+            description.innerHTML = '<p>No description available for this trail.</p>';
+        }
+        
+        // Update images
+        const imageGallery = document.getElementById('imageGallery');
+        if (trail.images && trail.images.length > 0) {
+            imageGallery.innerHTML = trail.images.map(img => 
+                `<img src="${img}" alt="Trail photo" onclick="trailBlogger.openImageModal('${img}')" />`
+            ).join('');
+        } else {
+            imageGallery.innerHTML = '<p>No photos available for this trail.</p>';
+        }
+        
+        // Update stats
+        const statsGrid = document.getElementById('statsGrid');
+        statsGrid.innerHTML = `
+            <div class="stat-item-detail">
+                <span class="stat-label-detail">Length:</span>
+                <span class="stat-value-detail">${trail.length} miles</span>
+            </div>
+            <div class="stat-item-detail">
+                <span class="stat-label-detail">Difficulty:</span>
+                <span class="stat-value-detail">${trail.difficulty}</span>
+            </div>
+            <div class="stat-item-detail">
+                <span class="stat-label-detail">Status:</span>
+                <span class="stat-value-detail">${trail.status}</span>
+            </div>
+            ${trail.dateHiked ? `
+            <div class="stat-item-detail">
+                <span class="stat-label-detail">Date Hiked:</span>
+                <span class="stat-value-detail">${new Date(trail.dateHiked).toLocaleDateString()}</span>
+            </div>
+            ` : ''}
+        `;
+        
+        // Show description panel
+        document.getElementById('descriptionPanel').classList.add('active');
+    }
+    
+    closeDescriptionPanel() {
+        document.getElementById('descriptionPanel').classList.remove('active');
+        this.selectedTrail = null;
+    }
+    
+    openImageModal(imageSrc) {
+        // Create a simple image modal
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 80%; max-height: 80%; padding: 0;">
+                <div class="modal-header">
+                    <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
+                </div>
+                <div class="modal-body" style="padding: 0;">
+                    <img src="${imageSrc}" style="width: 100%; height: auto; display: block;" alt="Trail photo" />
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+    }
+    
+    // Data persistence methods
+    async saveTrailToFile(trailData) {
+        try {
+            // For now, we'll use localStorage as a fallback
+            // In a real application, you'd make an API call to your Python backend
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            
+            const existingIndex = trails.findIndex(t => t.name === trailData.name);
+            if (existingIndex >= 0) {
+                trails[existingIndex] = trailData;
+            } else {
+                trails.push(trailData);
+            }
+            
+            localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
+            
+            // Also save as GeoJSON for compatibility
+            const geojsonData = {
+                type: "FeatureCollection",
+                features: trails.map(trail => ({
+                    type: "Feature",
+                    properties: {
+                        name: trail.name,
+                        length: trail.length,
+                        difficulty: trail.difficulty,
+                        status: trail.status,
+                        date_hiked: trail.dateHiked,
+                        blog_post: trail.blogPost,
+                        images: trail.images,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    },
+                    geometry: {
+                        type: "LineString",
+                        coordinates: trail.coordinates
+                    }
+                }))
+            };
+            
+            localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
+            
+            console.log('Trail data saved successfully');
+            return true;
+        } catch (error) {
+            console.error('Error saving trail data:', error);
+            return false;
+        }
+    }
+    
+    async loadTrailsFromFile() {
+        try {
+            // Load from localStorage
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            if (trails.length > 0) {
+                this.trails = trails;
+                console.log(`Loaded ${trails.length} trails from storage`);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error loading trail data:', error);
+            return false;
+        }
     }
     
     updateMapTrails() {

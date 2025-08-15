@@ -6,6 +6,7 @@
   "scripts": {
     "start": "live-server --port=3000 --open=/index.html",
     "dev": "live-server --port=3000 --open=/index.html",
+    "server": "python server.py",
     "build": "echo 'Build complete'"
   },
   "keywords": ["hiking", "trails", "mapping", "journal", "geojson"],
