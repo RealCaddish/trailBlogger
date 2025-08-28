@@ -24,12 +24,27 @@ data_manager = TrailDataManager()
 @app.route('/')
 def index():
     """Serve the main application"""
-    return send_from_directory('.', 'index.html')
+    response = send_from_directory('.', 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/<path:filename>')
 def serve_static(filename):
     """Serve static files"""
-    return send_from_directory('.', filename)
+    response = send_from_directory('.', filename)
+    
+    # Add cache control for static assets
+    if filename.endswith(('.js', '.css')):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    else:
+        # For other files, allow caching but with a short expiration
+        response.headers['Cache-Control'] = 'public, max-age=300'  # 5 minutes
+    
+    return response
 
 @app.route('/api/trails', methods=['GET'])
 def get_trails():
