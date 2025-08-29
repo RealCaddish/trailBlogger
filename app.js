@@ -7,6 +7,10 @@ class TrailBlogger {
         this.trailOverlay = null;
         this.currentFilter = 'all';
         this.selectedTrail = null;
+        this.parksData = null; // Will store the parks from parks_simplified.json
+        this.parksLayer = null; // Will store the parks GeoJSON layer
+        this.statesData = null; // Will store the states from states.geojson
+        this.currentState = null; // Currently selected state
         
         // Park boundaries and center coordinates
         this.parks = {
@@ -30,6 +34,10 @@ class TrailBlogger {
             this.initializeMap();
             console.log('Map initialized successfully');
             
+            // Load parks data
+            await this.loadParksData();
+            console.log('Parks data loaded successfully');
+            
             // Try to load data from storage first
             const loadedFromStorage = await this.loadTrailsFromFile();
             if (!loadedFromStorage) {
@@ -40,6 +48,12 @@ class TrailBlogger {
             this.setupEventListeners();
             this.updateStatistics();
             this.renderTrailList();
+            
+            // Check localStorage usage after loading data
+            setTimeout(() => {
+                this.checkLocalStorageUsage();
+            }, 1000);
+            
             console.log('Trail Blogger initialization complete');
         } catch (error) {
             console.error('Error during initialization:', error);
@@ -83,6 +97,132 @@ class TrailBlogger {
         }
     }
     
+    async loadParksData() {
+        try {
+            console.log('Loading parks and states data...');
+            
+            // Load parks data
+            const parksResponse = await fetch('data/parks_simplified.json');
+            if (!parksResponse.ok) {
+                throw new Error(`HTTP error! status: ${parksResponse.status}`);
+            }
+            this.parksData = await parksResponse.json();
+            console.log('Parks data loaded:', this.parksData.features.length, 'parks');
+            
+            // Load states data
+            const statesResponse = await fetch('data/states.geojson');
+            if (!statesResponse.ok) {
+                throw new Error(`HTTP error! status: ${statesResponse.status}`);
+            }
+            this.statesData = await statesResponse.json();
+            console.log('States data loaded:', this.statesData.features.length, 'states');
+            
+            // Populate dropdowns
+            this.populateStateDropdown();
+            this.populateParkDropdown();
+            
+            // Add parks layer to map
+            this.addParksLayer();
+            
+        } catch (error) {
+            console.error('Error loading parks/states data:', error);
+        }
+    }
+    
+    populateStateDropdown() {
+        const stateSelect = document.getElementById('stateSelect');
+        if (stateSelect && this.statesData && this.statesData.features) {
+            stateSelect.innerHTML = '<option value="">Select a State</option>';
+            
+            // Sort states alphabetically by name
+            const sortedStates = [...this.statesData.features].sort((a, b) => 
+                a.properties.name.localeCompare(b.properties.name)
+            );
+            
+            sortedStates.forEach(feature => {
+                const stateName = feature.properties.name;
+                const option = document.createElement('option');
+                option.value = stateName;
+                option.textContent = stateName;
+                stateSelect.appendChild(option);
+            });
+        }
+    }
+    
+    populateParkDropdown() {
+        const parkSelect = document.getElementById('parkSelect');
+        const trailParkSelect = document.getElementById('trailPark');
+        const importTrailParkSelect = document.getElementById('importTrailPark');
+        
+        const dropdowns = [parkSelect, trailParkSelect, importTrailParkSelect];
+        const selectedState = document.getElementById('stateSelect').value;
+        
+        console.log('Populating park dropdown...');
+        console.log('Selected state:', selectedState);
+        console.log('Parks data available:', this.parksData ? 'Yes' : 'No');
+        console.log('Number of parks:', this.parksData ? this.parksData.features.length : 0);
+        
+        dropdowns.forEach(dropdown => {
+            if (dropdown) {
+                dropdown.innerHTML = '<option value="">Select a Park</option>';
+                
+                if (this.parksData && this.parksData.features) {
+                    // Filter parks by selected state if a state is selected
+                    let parksToShow = this.parksData.features;
+                    
+                    if (selectedState) {
+                        parksToShow = this.parksData.features.filter(feature => {
+                            const parkState = feature.properties.state;
+                            const matches = parkState === selectedState;
+                            console.log(`Park: ${feature.properties.NAME}, State: ${parkState}, Matches: ${matches}`);
+                            return matches;
+                        });
+                        console.log(`Filtered parks for state "${selectedState}":`, parksToShow.length);
+                    }
+                    
+                    // Sort parks alphabetically by name
+                    const sortedFeatures = [...parksToShow].sort((a, b) => {
+                        const nameA = a.properties.NAME || '';
+                        const nameB = b.properties.NAME || '';
+                        return nameA.localeCompare(nameB);
+                    });
+                    
+                    console.log('Adding parks to dropdown:', sortedFeatures.length);
+                    sortedFeatures.forEach(feature => {
+                        const parkName = feature.properties.NAME;
+                        if (parkName) { // Only add parks with valid names
+                            const option = document.createElement('option');
+                            option.value = parkName;
+                            option.textContent = parkName;
+                            dropdown.appendChild(option);
+                        }
+                    });
+                }
+            }
+        });
+    }
+    
+    addParksLayer() {
+        if (this.parksData) {
+            this.parksLayer = L.geoJSON(this.parksData, {
+                style: {
+                    color: '#007cbf',
+                    weight: 2,
+                    opacity: 0.6,
+                    fillColor: '#007cbf',
+                    fillOpacity: 0.1
+                },
+                onEachFeature: (feature, layer) => {
+                    const parkName = feature.properties.NAME;
+                    layer.bindPopup(`<b>${parkName}</b><br>Type: ${feature.properties.FEATTYPE || 'Unknown'}`);
+                }
+            });
+            
+            // Initially hide the parks layer
+            // this.map.addLayer(this.parksLayer);
+        }
+    }
+    
     loadTrailOverlay() {
         // Start with empty trail overlay - trails will be added dynamically
         this.trailOverlay = L.geoJSON({
@@ -108,6 +248,7 @@ class TrailBlogger {
                         </div>
                         <div class="trail-stats">
                             <span>Status: ${feature.properties.status}</span>
+                            ${feature.properties.park ? `<span>Park: ${feature.properties.park}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -130,6 +271,13 @@ class TrailBlogger {
     }
     
     setupEventListeners() {
+        // State selection
+        document.getElementById('stateSelect').addEventListener('change', (e) => {
+            console.log('State selection changed to:', e.target.value);
+            this.currentState = e.target.value;
+            this.changeState();
+        });
+        
         // Park selection
         document.getElementById('parkSelect').addEventListener('change', (e) => {
             this.currentPark = e.target.value;
@@ -145,6 +293,8 @@ class TrailBlogger {
         document.getElementById('addTrailBtn').addEventListener('click', () => this.showTrailModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
         document.getElementById('backupBtn').addEventListener('click', () => this.createBackup());
+        document.getElementById('restoreBtn').addEventListener('click', () => this.showRestoreDialog());
+        document.getElementById('storageBtn').addEventListener('click', () => this.showStorageManagement());
         
         // Close modals
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -179,6 +329,14 @@ class TrailBlogger {
         // GeoJSON file preview
         document.getElementById('geojsonFile').addEventListener('change', (e) => this.handleGeoJSONPreview(e));
         
+        // Restore file input
+        document.getElementById('restoreFileInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.restoreFromBackup(e.target.files[0]);
+                e.target.value = ''; // Reset input
+            }
+        });
+        
         // Description panel controls
         document.getElementById('closeDescription').addEventListener('click', () => this.closeDescriptionPanel());
         
@@ -199,17 +357,120 @@ class TrailBlogger {
         });
     }
     
-    changePark() {
-        const park = this.parks[this.currentPark];
-        this.map.setView(park.center, park.zoom);
+    changeState() {
+        console.log('changeState() called with currentState:', this.currentState);
+        // Update park dropdown when state changes
+        this.populateParkDropdown();
         
-        // Clear existing trail overlay
-        if (this.trailOverlay) {
-            this.map.removeLayer(this.trailOverlay);
+        // Clear existing layers
+        if (this.currentParkLayer) {
+            this.map.removeLayer(this.currentParkLayer);
+            this.currentParkLayer = null;
         }
         
-        // Load new trail overlay for the selected park
-        this.loadTrailOverlay();
+        if (this.currentStateLayer) {
+            this.map.removeLayer(this.currentStateLayer);
+            this.currentStateLayer = null;
+        }
+        
+        if (!this.currentState) {
+            // No state selected, show default view
+            this.map.flyTo([37.8333, -83.6167], 8, {
+                duration: 1.5
+            });
+            return;
+        }
+        
+        // Find the selected state in the states data
+        const selectedState = this.statesData.features.find(feature => 
+            feature.properties.name === this.currentState
+        );
+        
+        if (selectedState) {
+            // Create a layer for the selected state
+            const selectedStateLayer = L.geoJSON(selectedState, {
+                style: {
+                    color: '#28a745',
+                    weight: 2,
+                    opacity: 0.6,
+                    fillColor: '#28a745',
+                    fillOpacity: 0.1
+                },
+                onEachFeature: (feature, layer) => {
+                    const stateName = feature.properties.name;
+                    layer.bindPopup(`<b>${stateName}</b>`);
+                }
+            });
+            
+            // Add the selected state layer
+            this.map.addLayer(selectedStateLayer);
+            
+            // Fly to the selected state
+            this.map.flyToBounds(selectedStateLayer.getBounds(), { 
+                padding: [50, 50],
+                duration: 1.5
+            });
+            
+            // Store reference to current state layer
+            this.currentStateLayer = selectedStateLayer;
+        }
+    }
+    
+    changePark() {
+        const selectedParkName = document.getElementById('parkSelect').value;
+        
+        // Clear existing layers
+        if (this.currentParkLayer) {
+            this.map.removeLayer(this.currentParkLayer);
+            this.currentParkLayer = null;
+        }
+        
+        if (this.currentStateLayer) {
+            this.map.removeLayer(this.currentStateLayer);
+            this.currentStateLayer = null;
+        }
+        
+        if (!selectedParkName) {
+            // No park selected, show default view
+            this.map.flyTo([37.8333, -83.6167], 8, {
+                duration: 1.5
+            });
+            return;
+        }
+        
+        // Find the selected park in the parks data
+        const selectedPark = this.parksData.features.find(feature => 
+            feature.properties.NAME === selectedParkName
+        );
+        
+        if (selectedPark) {
+            // Create a layer for just the selected park
+            const selectedParkLayer = L.geoJSON(selectedPark, {
+                style: {
+                    color: '#007cbf',
+                    weight: 3,
+                    opacity: 0.8,
+                    fillColor: '#007cbf',
+                    fillOpacity: 0.2
+                },
+                onEachFeature: (feature, layer) => {
+                    const parkName = feature.properties.NAME;
+                    layer.bindPopup(`<b>${parkName}</b><br>Type: ${feature.properties.FEATTYPE || 'Unknown'}`);
+                }
+            });
+            
+            // Add the selected park layer
+            this.map.addLayer(selectedParkLayer);
+            
+            // Fly to the selected park
+            this.map.flyToBounds(selectedParkLayer.getBounds(), { 
+                padding: [20, 20],
+                duration: 1.5
+            });
+            
+            // Store reference to current park layer
+            this.currentParkLayer = selectedParkLayer;
+        }
     }
     
     filterTrails(filter) {
@@ -241,6 +502,7 @@ class TrailBlogger {
                     <span class="trail-length">${trail.length} miles</span> • 
                     <span>${trail.difficulty}</span> • 
                     <span class="trail-status">${trail.status}</span>
+                    ${trail.park ? ` • <span class="trail-park">${trail.park}</span>` : ''}
                     ${trail.dateHiked ? ` • <span>${new Date(trail.dateHiked).toLocaleDateString()}</span>` : ''}
                 </div>
                 <div class="trail-actions">
@@ -294,6 +556,59 @@ class TrailBlogger {
         document.getElementById('importModal').style.display = 'block';
     }
     
+    showRestoreDialog() {
+        // Trigger the hidden file input
+        document.getElementById('restoreFileInput').click();
+    }
+    
+    showStorageManagement() {
+        const usageMB = this.checkLocalStorageUsage();
+        const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+        const totalImages = trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0);
+        
+        const message = 
+            `Storage Management\n\n` +
+            `Current Usage: ${usageMB.toFixed(2)} MB\n` +
+            `Total Trails: ${trails.length}\n` +
+            `Total Images: ${totalImages}\n\n` +
+            `Choose an action:\n\n` +
+            `1. Create Backup (recommended before cleanup)\n` +
+            `2. Remove All Images (frees space, keeps trail data)\n` +
+            `3. Clear All Data (removes everything)\n` +
+            `4. Clean Old Backups (removes old backup files)\n` +
+            `5. Cancel`;
+        
+        const choice = prompt(message, '1');
+        
+        switch (choice) {
+            case '1':
+                this.createBackup();
+                break;
+            case '2':
+                if (confirm('Remove all images from trails? This will free storage space but you will lose all photos.')) {
+                    this.removeImagesFromTrails();
+                }
+                break;
+            case '3':
+                if (confirm('Clear ALL trail data? This cannot be undone unless you have a backup.')) {
+                    this.clearAllData();
+                }
+                break;
+            case '4':
+                const freedSpace = this.cleanupOldBackups();
+                if (freedSpace > 0) {
+                    alert(`Cleaned up old backups. Freed ${(freedSpace / 1024).toFixed(2)} KB of space.`);
+                } else {
+                    alert('No old backups found to clean up.');
+                }
+                break;
+            case '5':
+            default:
+                // Cancel
+                break;
+        }
+    }
+    
     closeModals() {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.style.display = 'none';
@@ -302,6 +617,7 @@ class TrailBlogger {
     
     populateTrailForm(trail) {
         document.getElementById('trailName').value = trail.name;
+        document.getElementById('trailPark').value = trail.park || '';
         document.getElementById('trailLength').value = trail.length;
         document.getElementById('trailDifficulty').value = trail.difficulty;
         document.getElementById('trailStatus').value = trail.status;
@@ -333,6 +649,7 @@ class TrailBlogger {
         const trailData = {
             id: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now(),
             name: trailName,
+            park: formData.get('trailPark') || '',
             length: parseFloat(formData.get('trailLength')),
             difficulty: formData.get('trailDifficulty'),
             status: formData.get('trailStatus'),
@@ -386,7 +703,13 @@ class TrailBlogger {
             const promise = new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    resolve(e.target.result);
+                    // Compress the image to reduce storage size
+                    this.compressImage(e.target.result, 800, 0.8).then(compressedImage => {
+                        resolve(compressedImage);
+                    }).catch(() => {
+                        // If compression fails, use original
+                        resolve(e.target.result);
+                    });
                 };
                 reader.readAsDataURL(imageFiles[i]);
             });
@@ -398,6 +721,51 @@ class TrailBlogger {
         images.push(...newImages);
         
         return images;
+    }
+    
+    // Compress images to reduce localStorage size
+    async compressImage(dataUrl, maxWidth = 800, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Check current storage usage and adjust compression accordingly
+                const currentUsage = this.checkLocalStorageUsage();
+                let compressionQuality = quality;
+                let compressionWidth = maxWidth;
+                
+                if (currentUsage > 7) {
+                    // More aggressive compression when storage is getting full
+                    compressionQuality = 0.6;
+                    compressionWidth = 600;
+                } else if (currentUsage > 5) {
+                    // Moderate compression
+                    compressionQuality = 0.7;
+                    compressionWidth = 700;
+                }
+                
+                // Calculate new dimensions
+                let { width, height } = img;
+                if (width > compressionWidth) {
+                    height = (height * compressionWidth) / width;
+                    width = compressionWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
+                
+                console.log(`Compressed image: ${width}x${height}, quality: ${compressionQuality}`);
+                resolve(compressedDataUrl);
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
+        });
     }
     
     removeImage(index) {
@@ -443,6 +811,7 @@ class TrailBlogger {
     async importGeoJSON() {
         const file = document.getElementById('geojsonFile').files[0];
         const trailName = document.getElementById('importTrailName').value;
+        const trailPark = document.getElementById('importTrailPark').value;
         
         if (!file || !trailName) {
             alert('Please select a file and enter a trail name.');
@@ -464,11 +833,11 @@ class TrailBlogger {
                 
                 if (geojson.type === 'Feature') {
                     console.log('Processing single Feature');
-                    trailData = this.extractTrailFromFeature(geojson, trailName);
+                    trailData = this.extractTrailFromFeature(geojson, trailName, trailPark);
                 } else if (geojson.type === 'FeatureCollection') {
                     console.log('Processing FeatureCollection with', geojson.features.length, 'features');
                     if (geojson.features.length > 0) {
-                        trailData = this.extractTrailFromFeature(geojson.features[0], trailName);
+                        trailData = this.extractTrailFromFeature(geojson.features[0], trailName, trailPark);
                     } else {
                         alert('FeatureCollection contains no features.');
                         return;
@@ -516,7 +885,7 @@ class TrailBlogger {
         reader.readAsText(file);
     }
     
-    extractTrailFromFeature(feature, trailName) {
+    extractTrailFromFeature(feature, trailName, trailPark = '') {
         if (!feature || !feature.geometry) {
             console.error('Invalid feature or missing geometry');
             return null;
@@ -574,6 +943,7 @@ class TrailBlogger {
         const trailData = {
             id: Date.now(),
             name: trailName,
+            park: trailPark,
             length: length,
             difficulty: properties.difficulty || properties.DIFFICULTY || 'moderate',
             status: properties.status || properties.STATUS || 'unhiked',
@@ -704,6 +1074,12 @@ class TrailBlogger {
                 <span class="stat-label-detail">Status:</span>
                 <span class="stat-value-detail">${trail.status}</span>
             </div>
+            ${trail.park ? `
+            <div class="stat-item-detail">
+                <span class="stat-label-detail">Park:</span>
+                <span class="stat-value-detail">${trail.park}</span>
+            </div>
+            ` : ''}
             ${trail.dateHiked ? `
             <div class="stat-item-detail">
                 <span class="stat-label-detail">Date Hiked:</span>
@@ -838,6 +1214,23 @@ class TrailBlogger {
         try {
             console.log('Saving trail data to localStorage:', trailData.name);
             
+            // Check storage usage before saving
+            const currentUsage = this.checkLocalStorageUsage();
+            if (currentUsage > 8) {
+                const shouldContinue = confirm(
+                    `Warning: Your trail data is taking up ${currentUsage.toFixed(2)} MB of storage.\n\n` +
+                    `This is close to the localStorage limit and may cause errors.\n\n` +
+                    `Would you like to:\n` +
+                    `1. Continue anyway (may fail)\n` +
+                    `2. Create a backup and clear old data first\n` +
+                    `3. Cancel the save operation`
+                );
+                
+                if (shouldContinue === false) {
+                    return false;
+                }
+            }
+            
             // Load existing trails from localStorage
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
             console.log('Existing trails in localStorage:', trails.length);
@@ -845,48 +1238,94 @@ class TrailBlogger {
             const existingIndex = trails.findIndex(t => t.name === trailData.name);
             if (existingIndex >= 0) {
                 console.log('Updating existing trail at index:', existingIndex);
+                // Preserve creation date and add update timestamp
+                trailData.created_at = trails[existingIndex].created_at || new Date().toISOString();
+                trailData.updated_at = new Date().toISOString();
                 trails[existingIndex] = trailData;
             } else {
                 console.log('Adding new trail to localStorage');
+                trailData.created_at = new Date().toISOString();
+                trailData.updated_at = new Date().toISOString();
                 trails.push(trailData);
             }
             
-            // Save updated trails array
-            localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
-            console.log('Trails array saved to localStorage. Total trails:', trails.length);
-            
-            // Also save as GeoJSON for compatibility
-            const geojsonData = {
-                type: "FeatureCollection",
-                features: trails.map(trail => {
-                    // Use original GeoJSON geometry if available, otherwise create LineString
-                    const geometry = trail.originalGeoJSON && trail.originalGeoJSON.geometry 
-                        ? trail.originalGeoJSON.geometry 
-                        : {
-                            type: "LineString",
-                            coordinates: trail.coordinates
-                        };
+            // Try to save with error handling
+            try {
+                localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
+                console.log('Trails array saved to localStorage. Total trails:', trails.length);
+            } catch (storageError) {
+                if (storageError.name === 'QuotaExceededError') {
+                    console.error('localStorage quota exceeded. Attempting to free space...');
                     
-                    return {
-                        type: "Feature",
-                        properties: {
-                            name: trail.name,
-                            length: trail.length,
-                            difficulty: trail.difficulty,
-                            status: trail.status,
-                            date_hiked: trail.dateHiked,
-                            blog_post: trail.blogPost,
-                            images: trail.images,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        },
-                        geometry: geometry
-                    };
-                })
-            };
+                    // Try to free space by removing old backups
+                    this.cleanupOldBackups();
+                    
+                    // Try saving again
+                    try {
+                        localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
+                        console.log('Successfully saved after cleanup');
+                    } catch (retryError) {
+                        console.error('Still cannot save after cleanup:', retryError);
+                        alert(
+                            'Unable to save trail data due to storage limits.\n\n' +
+                            'Please:\n' +
+                            '1. Create a backup of your data\n' +
+                            '2. Remove some images from existing trails\n' +
+                            '3. Clear browser data for this site\n' +
+                            '4. Try again'
+                        );
+                        return false;
+                    }
+                } else {
+                    throw storageError;
+                }
+            }
             
-            localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
-            console.log('GeoJSON data saved to localStorage');
+            // Also save as GeoJSON for compatibility (with error handling)
+            try {
+                const geojsonData = {
+                    type: "FeatureCollection",
+                    features: trails.map(trail => {
+                        // Use original GeoJSON geometry if available, otherwise create LineString
+                        const geometry = trail.originalGeoJSON && trail.originalGeoJSON.geometry 
+                            ? trail.originalGeoJSON.geometry 
+                            : {
+                                type: "LineString",
+                                coordinates: trail.coordinates
+                            };
+                        
+                        return {
+                            type: "Feature",
+                            properties: {
+                                name: trail.name,
+                                length: trail.length,
+                                difficulty: trail.difficulty,
+                                status: trail.status,
+                                date_hiked: trail.dateHiked,
+                                blog_post: trail.blogPost,
+                                images: trail.images,
+                                created_at: trail.created_at,
+                                updated_at: trail.updated_at
+                            },
+                            geometry: geometry
+                        };
+                    })
+                };
+                
+                localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
+                console.log('GeoJSON data saved to localStorage');
+            } catch (geojsonError) {
+                console.warn('Could not save GeoJSON data:', geojsonError);
+                // Continue anyway - the main trails data was saved
+            }
+            
+            // Try to save backup (optional - don't fail if this doesn't work)
+            try {
+                const backupKey = `trailBlogger_backup_${new Date().toISOString().split('T')[0]}`;
+                localStorage.setItem(backupKey, JSON.stringify(trails));
+            } catch (backupError) {
+                console.warn('Could not save backup:', backupError);
+            }
             
             // Verify the save worked
             const savedTrails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
@@ -896,6 +1335,7 @@ class TrailBlogger {
             return true;
         } catch (error) {
             console.error('Error saving trail data to localStorage:', error);
+            alert('Error saving trail data. Please try again or create a backup first.');
             return false;
         }
     }
@@ -907,6 +1347,20 @@ class TrailBlogger {
             if (trails.length > 0) {
                 this.trails = trails;
                 console.log(`Loaded ${trails.length} trails from storage:`, trails.map(t => t.name));
+                
+                // Log details about loaded data
+                trails.forEach(trail => {
+                    console.log(`Trail: ${trail.name}`);
+                    console.log(`  - Length: ${trail.length} miles`);
+                    console.log(`  - Difficulty: ${trail.difficulty}`);
+                    console.log(`  - Status: ${trail.status}`);
+                    console.log(`  - Date Hiked: ${trail.dateHiked || 'Not hiked'}`);
+                    console.log(`  - Blog Post: ${trail.blogPost ? 'Yes' : 'No'}`);
+                    console.log(`  - Images: ${trail.images ? trail.images.length : 0} images`);
+                    console.log(`  - Coordinates: ${trail.coordinates ? trail.coordinates.length : 0} points`);
+                    console.log(`  - Created: ${trail.created_at || 'Unknown'}`);
+                    console.log(`  - Updated: ${trail.updated_at || 'Unknown'}`);
+                });
                 
                 // Update the map with loaded trails
                 this.updateMapTrails();
@@ -983,6 +1437,7 @@ class TrailBlogger {
                         </div>
                         <div class="trail-stats">
                             <span>Status: ${feature.properties.status}</span>
+                            ${feature.properties.park ? `<span>Park: ${feature.properties.park}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -1058,11 +1513,107 @@ class TrailBlogger {
         console.log('All trail data cleared');
     }
     
+    // Remove images from trails to free storage space
+    removeImagesFromTrails() {
+        const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+        let totalImagesRemoved = 0;
+        let freedSpace = 0;
+        
+        trails.forEach(trail => {
+            if (trail.images && trail.images.length > 0) {
+                // Calculate size of images
+                trail.images.forEach(img => {
+                    if (img.startsWith('data:')) {
+                        freedSpace += img.length;
+                    }
+                });
+                
+                totalImagesRemoved += trail.images.length;
+                trail.images = []; // Remove all images
+            }
+        });
+        
+        if (totalImagesRemoved > 0) {
+            // Save updated trails
+            localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
+            this.trails = trails;
+            this.updateStatistics();
+            this.renderTrailList();
+            this.updateMapTrails();
+            
+            console.log(`Removed ${totalImagesRemoved} images, freed ${(freedSpace / 1024).toFixed(2)} KB`);
+            alert(`Removed ${totalImagesRemoved} images from all trails.\nFreed ${(freedSpace / 1024).toFixed(2)} KB of storage space.`);
+        } else {
+            alert('No images found to remove.');
+        }
+    }
+    
+    // Restore data from backup file
+    async restoreFromBackup(file) {
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.trails || !Array.isArray(backupData.trails)) {
+                        alert('Invalid backup file. No trail data found.');
+                        return;
+                    }
+                    
+                    // Confirm restoration
+                    const confirmRestore = confirm(
+                        `Restore ${backupData.trails.length} trails from backup?\n\n` +
+                        `This will replace all current data.\n\n` +
+                        `Backup created: ${backupData.metadata?.backupCreated || 'Unknown'}\n` +
+                        `Trails: ${backupData.trails.length}\n` +
+                        `Images: ${backupData.metadata?.totalImages || 'Unknown'}`
+                    );
+                    
+                    if (!confirmRestore) return;
+                    
+                    // Clear current data
+                    this.clearAllData();
+                    
+                    // Restore trails
+                    this.trails = backupData.trails;
+                    
+                    // Save to localStorage
+                    localStorage.setItem('trailBlogger_trails', JSON.stringify(this.trails));
+                    
+                    // Update GeoJSON if available
+                    if (backupData.geojson) {
+                        localStorage.setItem('trailBlogger_geojson', JSON.stringify(backupData.geojson));
+                    }
+                    
+                    // Update UI
+                    this.updateStatistics();
+                    this.renderTrailList();
+                    this.updateMapTrails();
+                    
+                    console.log(`Restored ${this.trails.length} trails from backup`);
+                    alert(`Successfully restored ${this.trails.length} trails from backup!`);
+                    
+                } catch (error) {
+                    console.error('Error parsing backup file:', error);
+                    alert('Error parsing backup file. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+        } catch (error) {
+            console.error('Error reading backup file:', error);
+            alert('Error reading backup file. Please try again.');
+        }
+    }
+    
     // Debug method to show current stored data
     showStoredData() {
         const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
         console.log('Stored trails:', trails);
         console.log('Current trails in memory:', this.trails);
+        
+        // Check localStorage usage
+        this.checkLocalStorageUsage();
         
         // Test coordinate conversion for each trail
         this.trails.forEach(trail => {
@@ -1078,6 +1629,75 @@ class TrailBlogger {
         });
     }
     
+    // Check localStorage usage and provide warnings
+    checkLocalStorageUsage() {
+        try {
+            let totalSize = 0;
+            const keys = Object.keys(localStorage);
+            
+            keys.forEach(key => {
+                if (key.startsWith('trailBlogger_')) {
+                    const size = localStorage.getItem(key).length;
+                    totalSize += size;
+                    console.log(`Key: ${key}, Size: ${(size / 1024).toFixed(2)} KB`);
+                }
+            });
+            
+            const totalKB = totalSize / 1024;
+            const totalMB = totalKB / 1024;
+            
+            console.log(`Total TrailBlogger data: ${totalKB.toFixed(2)} KB (${totalMB.toFixed(2)} MB)`);
+            
+            // localStorage limit is typically 5-10 MB
+            if (totalMB > 8) {
+                console.warn('⚠️ localStorage is getting full! Consider creating a backup and clearing old data.');
+                alert('Warning: Your trail data is taking up a lot of space. Consider creating a backup and removing some old images.');
+            } else if (totalMB > 5) {
+                console.warn('⚠️ localStorage usage is moderate. Consider compressing images.');
+            }
+            
+            return totalMB;
+        } catch (error) {
+            console.error('Error checking localStorage usage:', error);
+            return 0;
+        }
+    }
+    
+    // Clean up old backups to free storage space
+    cleanupOldBackups() {
+        try {
+            const keys = Object.keys(localStorage);
+            const backupKeys = keys.filter(key => 
+                key.startsWith('trailBlogger_backup_') && 
+                key !== 'trailBlogger_backup_' + new Date().toISOString().split('T')[0]
+            );
+            
+            // Sort by date (oldest first)
+            backupKeys.sort();
+            
+            // Remove oldest backups (keep the 2 most recent)
+            const keysToRemove = backupKeys.slice(0, Math.max(0, backupKeys.length - 2));
+            
+            let freedSpace = 0;
+            keysToRemove.forEach(key => {
+                const size = localStorage.getItem(key).length;
+                freedSpace += size;
+                localStorage.removeItem(key);
+                console.log(`Removed old backup: ${key} (${(size / 1024).toFixed(2)} KB)`);
+            });
+            
+            if (freedSpace > 0) {
+                console.log(`Freed ${(freedSpace / 1024).toFixed(2)} KB of storage space`);
+                return freedSpace;
+            }
+            
+            return 0;
+        } catch (error) {
+            console.error('Error cleaning up old backups:', error);
+            return 0;
+        }
+    }
+    
     // Backup functionality
     async createBackup() {
         try {
@@ -1087,17 +1707,23 @@ class TrailBlogger {
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
             const geojson = JSON.parse(localStorage.getItem('trailBlogger_geojson') || '{"type":"FeatureCollection","features":[]}');
             
+            // Check localStorage usage before backup
+            const usageMB = this.checkLocalStorageUsage();
+            
             // Create backup object
             const backupData = {
                 timestamp: new Date().toISOString(),
-                version: '1.0',
-                trails: trails,
-                geojson: geojson,
-                statistics: {
+                version: '1.1',
+                metadata: {
                     totalTrails: trails.length,
                     hikedTrails: trails.filter(t => t.status === 'hiked').length,
-                    totalMiles: trails.filter(t => t.status === 'hiked').reduce((sum, t) => sum + t.length, 0)
-                }
+                    totalMiles: trails.filter(t => t.status === 'hiked').reduce((sum, t) => sum + t.length, 0),
+                    totalImages: trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0),
+                    storageSizeMB: usageMB,
+                    backupCreated: new Date().toISOString()
+                },
+                trails: trails,
+                geojson: geojson
             };
             
             // Create downloadable file
@@ -1107,7 +1733,7 @@ class TrailBlogger {
             // Create download link
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = `trailblogger_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `trailblogger_backup_${new Date().toISOString().split('T')[0]}_${trails.length}trails.json`;
             link.style.display = 'none';
             
             // Trigger download
@@ -1119,7 +1745,8 @@ class TrailBlogger {
             URL.revokeObjectURL(link.href);
             
             console.log('Backup created successfully');
-            alert('Backup created successfully! Your trail data has been saved locally.');
+            console.log(`Backup contains ${trails.length} trails with ${backupData.metadata.totalImages} images`);
+            alert(`Backup created successfully!\n\nTrails: ${trails.length}\nImages: ${backupData.metadata.totalImages}\nSize: ${usageMB.toFixed(2)} MB`);
             
         } catch (error) {
             console.error('Error creating backup:', error);

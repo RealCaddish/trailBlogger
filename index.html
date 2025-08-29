@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Trail Blogger - Hiking Journal</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css?v=1.0">
+    <link rel="stylesheet" href="styles.css?v=20241201">
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,6 +30,12 @@
                     <button id="backupBtn" class="btn btn-secondary" title="Create Backup">
                         <i class="fas fa-download"></i> Backup
                     </button>
+                    <button id="restoreBtn" class="btn btn-secondary" title="Restore from Backup">
+                        <i class="fas fa-upload"></i> Restore
+                    </button>
+                    <button id="storageBtn" class="btn btn-secondary" title="Storage Management">
+                        <i class="fas fa-hdd"></i> Storage
+                    </button>
                     <button id="importBtn" class="btn btn-primary">
                         <i class="fas fa-upload"></i> Import Trail
                     </button>
@@ -42,11 +51,19 @@
             <!-- Sidebar -->
             <aside class="sidebar">
                 <div class="sidebar-section">
-                    <h3>Trail Selection</h3>
-                    <select id="parkSelect" class="form-select">
-                        <option value="red-river-gorge">Red River Gorge</option>
-                        <option value="other-park">Other Parks...</option>
-                    </select>
+                    <h3>Location Selection</h3>
+                    <div class="form-group">
+                        <label for="stateSelect">State:</label>
+                        <select id="stateSelect" class="form-select">
+                            <option value="">Select a State</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="parkSelect">Park:</label>
+                        <select id="parkSelect" class="form-select">
+                            <option value="">Select a Park</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="sidebar-section">
@@ -144,6 +161,13 @@
                         </div>
                         
                         <div class="form-group">
+                            <label for="trailPark">Park:</label>
+                            <select id="trailPark" name="trailPark">
+                                <option value="">Select a Park</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
                             <label for="trailLength">Length (miles):</label>
                             <input type="number" id="trailLength" name="trailLength" step="0.1" required>
                         </div>
@@ -210,6 +234,13 @@
                             <input type="text" id="importTrailName" name="importTrailName" required>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="importTrailPark">Park:</label>
+                            <select id="importTrailPark" name="importTrailPark">
+                                <option value="">Select a Park</option>
+                            </select>
+                        </div>
+                        
                         <div id="geojsonPreview" class="geojson-preview"></div>
                         
                         <div class="form-actions">
@@ -220,12 +251,15 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Hidden file input for restore functionality -->
+        <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-    <script src="app.js?v=1.0"></script>
+            <script src="app.js?v=20241203"></script>
 </body>
 </html>

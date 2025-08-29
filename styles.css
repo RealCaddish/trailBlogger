@@ -413,6 +413,12 @@ body {
     color: #ffc107;
 }
 
+.trail-park {
+    color: #007cbf;
+    font-weight: 500;
+    font-style: italic;
+}
+
 /* Statistics */
 .stats {
     display: flex;
