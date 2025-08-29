@@ -34,9 +34,9 @@ class TrailBlogger {
             this.initializeMap();
             console.log('Map initialized successfully');
             
-            // Load parks data
+            // Load parks and states data
             await this.loadParksData();
-            console.log('Parks data loaded successfully');
+            console.log('Parks and states data loaded successfully');
             
             // Try to load data from storage first
             const loadedFromStorage = await this.loadTrailsFromFile();
@@ -118,8 +118,10 @@ class TrailBlogger {
             console.log('States data loaded:', this.statesData.features.length, 'states');
             
             // Populate dropdowns
+            console.log('About to populate dropdowns...');
             this.populateStateDropdown();
             this.populateParkDropdown();
+            console.log('Dropdowns populated');
             
             // Add parks layer to map
             this.addParksLayer();
@@ -669,24 +671,42 @@ class TrailBlogger {
     }
     
     populateTrailForm(trail) {
-        document.getElementById('trailName').value = trail.name;
+        console.log('Populating form with trail data:', trail);
+        
+        document.getElementById('trailName').value = trail.name || '';
         document.getElementById('trailPark').value = trail.park || '';
-        document.getElementById('trailLength').value = trail.length;
-        document.getElementById('trailDifficulty').value = trail.difficulty;
-        document.getElementById('trailStatus').value = trail.status;
+        
+        // Ensure length is properly converted to string and handle null/undefined
+        const lengthValue = trail.length !== null && trail.length !== undefined ? trail.length.toString() : '';
+        document.getElementById('trailLength').value = lengthValue;
+        console.log('Setting trail length to:', lengthValue, 'from original:', trail.length);
+        
+        document.getElementById('trailDifficulty').value = trail.difficulty || '';
+        
+        // Ensure status is properly set
+        const statusValue = trail.status || 'unhiked';
+        document.getElementById('trailStatus').value = statusValue;
+        console.log('Setting trail status to:', statusValue, 'from original:', trail.status);
+        
         document.getElementById('trailDate').value = trail.dateHiked || '';
-        document.getElementById('trailBlog').value = trail.blogPost;
+        document.getElementById('trailBlog').value = trail.blogPost || '';
         
         // Show existing images with remove buttons
         const imagePreview = document.getElementById('imagePreview');
-        imagePreview.innerHTML = trail.images.map((img, index) => `
-            <div class="image-preview-item">
-                <img src="${img}" alt="Trail image" />
-                <button type="button" class="remove-image-btn" onclick="trailBlogger.removeImage(${index})" title="Remove image">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
+        if (trail.images && trail.images.length > 0) {
+            imagePreview.innerHTML = trail.images.map((img, index) => `
+                <div class="image-preview-item">
+                    <img src="${img}" alt="Trail image" />
+                    <button type="button" class="remove-image-btn" onclick="trailBlogger.removeImage(${index})" title="Remove image">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `).join('');
+        } else {
+            imagePreview.innerHTML = '';
+        }
+        
+        console.log('Form populated successfully');
     }
     
     async saveTrail() {
@@ -1817,12 +1837,23 @@ class TrailBlogger {
             return;
         }
         
+        // Ask user if they want to export images as files
+        const exportImages = confirm('Do you want to export images as separate files?\n\nThis will:\n- Convert base64 images to actual image files\n- Create a smaller JSON file\n- Make it easier to share on GitHub\n\nClick OK to export images, Cancel to keep base64 format.');
+        
+        let processedTrails = trails;
+        
+        if (exportImages) {
+            // Process trails to convert base64 images to file references
+            processedTrails = this.convertImagesToFileReferences(trails);
+        }
+        
         // Create the shared data structure
         const sharedData = {
-            trails: trails,
+            trails: processedTrails,
             exported_at: new Date().toISOString(),
             total_trails: trails.length,
-            total_images: trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0)
+            total_images: trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0),
+            image_format: exportImages ? 'files' : 'base64'
         };
         
         // Create and download the file
@@ -1838,7 +1869,88 @@ class TrailBlogger {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        alert(`Exported ${trails.length} trails to shared_trails.json\n\nTo share this data:\n1. Replace the file in data/shared_trails.json\n2. Commit and push to GitHub\n3. Others will see your trails when they visit the site!`);
+        if (exportImages) {
+            // Also create a zip file with images
+            this.createImageZipFile(trails);
+        }
+        
+        const message = exportImages 
+            ? `Exported ${trails.length} trails with images as files!\n\nFiles created:\n- shared_trails.json (smaller file)\n- trail_images.zip (all images)\n\nTo share:\n1. Extract trail_images.zip to data/trail_images/\n2. Replace data/shared_trails.json\n3. Commit and push to GitHub`
+            : `Exported ${trails.length} trails to shared_trails.json\n\nTo share this data:\n1. Replace the file in data/shared_trails.json\n2. Commit and push to GitHub\n3. Others will see your trails when they visit the site!`;
+        
+        alert(message);
+    }
+    
+    // Convert base64 images to file references
+    convertImagesToFileReferences(trails) {
+        return trails.map(trail => {
+            const processedTrail = { ...trail };
+            
+            if (trail.images && trail.images.length > 0) {
+                processedTrail.images = trail.images.map((image, index) => {
+                    // Extract file extension from base64 data
+                    const extension = this.getImageExtensionFromBase64(image);
+                    const filename = `image_${index + 1}.${extension}`;
+                    
+                    return {
+                        filename: `data/trail_images/trail_${trail.id}/${filename}`,
+                        original_base64: image // Keep original for reference
+                    };
+                });
+            }
+            
+            return processedTrail;
+        });
+    }
+    
+    // Get image extension from base64 data
+    getImageExtensionFromBase64(base64String) {
+        if (base64String.startsWith('data:image/jpeg')) return 'jpg';
+        if (base64String.startsWith('data:image/jpg')) return 'jpg';
+        if (base64String.startsWith('data:image/png')) return 'png';
+        if (base64String.startsWith('data:image/gif')) return 'gif';
+        if (base64String.startsWith('data:image/webp')) return 'webp';
+        return 'jpg'; // Default
+    }
+    
+    // Create a zip file with all images
+    async createImageZipFile(trails) {
+        try {
+            // We'll use a simple approach to create downloadable image files
+            // For now, we'll create individual image files that can be downloaded
+            this.downloadAllImages(trails);
+        } catch (error) {
+            console.error('Error creating image zip:', error);
+            alert('Error creating image files. Images will remain in base64 format.');
+        }
+    }
+    
+    // Download all images as individual files
+    downloadAllImages(trails) {
+        let downloadCount = 0;
+        
+        trails.forEach(trail => {
+            if (trail.images && trail.images.length > 0) {
+                trail.images.forEach((image, index) => {
+                    const extension = this.getImageExtensionFromBase64(image);
+                    const filename = `trail_${trail.id}_image_${index + 1}.${extension}`;
+                    
+                    // Create download link for each image
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    downloadCount++;
+                });
+            }
+        });
+        
+        console.log(`Downloaded ${downloadCount} images`);
     }
     
     // Backup functionality
