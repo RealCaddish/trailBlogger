@@ -625,7 +625,8 @@ class TrailBlogger {
             `2. Remove All Images (frees space, keeps trail data)\n` +
             `3. Clear All Data (removes everything)\n` +
             `4. Clean Old Backups (removes old backup files)\n` +
-            `5. Cancel`;
+            `5. Export Data for Sharing (creates shared_trails.json)\n` +
+            `6. Cancel`;
         
         const choice = prompt(message, '1');
         
@@ -652,6 +653,9 @@ class TrailBlogger {
                 }
                 break;
             case '5':
+                this.exportDataForSharing();
+                break;
+            case '6':
             default:
                 // Cancel
                 break;
@@ -1432,32 +1436,48 @@ class TrailBlogger {
     
     async loadTrailsFromFile() {
         try {
-            // Load from localStorage
+            // First, try to load from localStorage
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
-            if (trails.length > 0) {
+            
+            // If no local trails, load shared trails
+            if (trails.length === 0) {
+                try {
+                    const response = await fetch('data/shared_trails.json');
+                    if (response.ok) {
+                        const sharedData = await response.json();
+                        this.trails = sharedData.trails || [];
+                        console.log(`Loaded ${this.trails.length} shared trails:`, this.trails.map(t => t.name));
+                        
+                        // Save shared trails to localStorage for future use
+                        localStorage.setItem('trailBlogger_trails', JSON.stringify(this.trails));
+                    }
+                } catch (sharedError) {
+                    console.log('No shared trails found, starting with empty trail list');
+                    this.trails = [];
+                }
+            } else {
                 this.trails = trails;
-                console.log(`Loaded ${trails.length} trails from storage:`, trails.map(t => t.name));
-                
-                // Log details about loaded data
-                trails.forEach(trail => {
-                    console.log(`Trail: ${trail.name}`);
-                    console.log(`  - Length: ${trail.length} miles`);
-                    console.log(`  - Difficulty: ${trail.difficulty}`);
-                    console.log(`  - Status: ${trail.status}`);
-                    console.log(`  - Date Hiked: ${trail.dateHiked || 'Not hiked'}`);
-                    console.log(`  - Blog Post: ${trail.blogPost ? 'Yes' : 'No'}`);
-                    console.log(`  - Images: ${trail.images ? trail.images.length : 0} images`);
-                    console.log(`  - Coordinates: ${trail.coordinates ? trail.coordinates.length : 0} points`);
-                    console.log(`  - Created: ${trail.created_at || 'Unknown'}`);
-                    console.log(`  - Updated: ${trail.updated_at || 'Unknown'}`);
-                });
-                
-                // Update the map with loaded trails
-                this.updateMapTrails();
-                
-                return true;
+                console.log(`Loaded ${trails.length} trails from localStorage:`, trails.map(t => t.name));
             }
-            return false;
+            
+            // Log details about loaded data
+            this.trails.forEach(trail => {
+                console.log(`Trail: ${trail.name}`);
+                console.log(`  - Length: ${trail.length} miles`);
+                console.log(`  - Difficulty: ${trail.difficulty}`);
+                console.log(`  - Status: ${trail.status}`);
+                console.log(`  - Date Hiked: ${trail.dateHiked || 'Not hiked'}`);
+                console.log(`  - Blog Post: ${trail.blogPost ? 'Yes' : 'No'}`);
+                console.log(`  - Images: ${trail.images ? trail.images.length : 0} images`);
+                console.log(`  - Coordinates: ${trail.coordinates ? trail.coordinates.length : 0} points`);
+                console.log(`  - Created: ${trail.created_at || 'Unknown'}`);
+                console.log(`  - Updated: ${trail.updated_at || 'Unknown'}`);
+            });
+            
+            // Update the map with loaded trails
+            this.updateMapTrails();
+            
+            return this.trails.length > 0;
         } catch (error) {
             console.error('Error loading trail data:', error);
             return false;
@@ -1786,6 +1806,39 @@ class TrailBlogger {
             console.error('Error cleaning up old backups:', error);
             return 0;
         }
+    }
+    
+    // Export data for sharing
+    exportDataForSharing() {
+        const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+        
+        if (trails.length === 0) {
+            alert('No trail data to export.');
+            return;
+        }
+        
+        // Create the shared data structure
+        const sharedData = {
+            trails: trails,
+            exported_at: new Date().toISOString(),
+            total_trails: trails.length,
+            total_images: trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0)
+        };
+        
+        // Create and download the file
+        const dataStr = JSON.stringify(sharedData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'shared_trails.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert(`Exported ${trails.length} trails to shared_trails.json\n\nTo share this data:\n1. Replace the file in data/shared_trails.json\n2. Commit and push to GitHub\n3. Others will see your trails when they visit the site!`);
     }
     
     // Backup functionality

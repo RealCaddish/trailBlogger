@@ -152,7 +152,6 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific - Personal Data (DO NOT COMMIT)
-data/
 uploads/
 images/
 *.db
@@ -160,10 +159,26 @@ images/
 *.sqlite3
 
 # Trail Blogger specific data directories
+# Ignore data directory by default, but include specific files
 data/
-data/images/
+!data/states.geojson
+!data/parks_simplified.json
+!data/trails.geojson
+!data/shared_trails.json
+!data/images/
+data/images/*
+!data/images/.gitkeep
+!data/trail_images/
+!data/trail_images/README.md
+data/trail_images/*/
+!data/trail_images/trail_*/
+data/trail_images/trail_*/*
+!data/trail_images/trail_*/*.jpg
+!data/trail_images/trail_*/*.jpeg
+!data/trail_images/trail_*/*.png
+!data/trail_images/trail_*/*.gif
+!data/trail_images/trail_*/*.webp
 data/backup_*/
-data/trails.geojson
 data/user_data/
 data/user_images/
 data/user_backups/
