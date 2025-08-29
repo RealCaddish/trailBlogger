@@ -128,17 +128,17 @@
                         <p>Select a trail to view its details and photos.</p>
                     </div>
                     
-                    <div class="trail-images" id="trailImagesSection">
-                        <h3>Photos</h3>
-                        <div class="image-gallery" id="imageGallery">
-                            <!-- Images will be populated here -->
-                        </div>
-                    </div>
-                    
                     <div class="trail-stats-detail" id="trailStatsDetail">
                         <h3>Trail Information</h3>
                         <div class="stats-grid" id="statsGrid">
                             <!-- Stats will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="trail-images" id="trailImagesSection">
+                        <h3>Photos</h3>
+                        <div class="image-gallery" id="imageGallery">
+                            <!-- Images will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -241,6 +241,11 @@
                             </select>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="importTrailLength">Calculated Length (miles):</label>
+                            <input type="text" id="importTrailLength" name="importTrailLength" readonly placeholder="Will be calculated from GeoJSON">
+                        </div>
+                        
                         <div id="geojsonPreview" class="geojson-preview"></div>
                         
                         <div class="form-actions">
@@ -260,6 +265,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-            <script src="app.js?v=20241203"></script>
+            <script src="app.js?v=20241208"></script>
 </body>
 </html>

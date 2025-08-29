@@ -203,16 +203,16 @@ body {
 }
 
 .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
 }
 
 .stat-item-detail {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -221,13 +221,19 @@ body {
 }
 
 .stat-label-detail {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .stat-value-detail {
     font-weight: 600;
     color: #e94560;
+    font-size: 1rem;
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
 .close-description {
@@ -333,8 +339,8 @@ body {
 }
 
 .trail-item.hiked {
-    border-left: 4px solid #28a745;
-    background-color: #f8fff9;
+    border-left: 4px solid #007cbf;
+    background-color: #f0f8ff;
 }
 
 .trail-item.unhiked {
@@ -351,6 +357,26 @@ body {
 .trail-item.selected .trail-name {
     color: #2c3e50;
     font-weight: 600;
+}
+
+/* Selected hiked trail - blue */
+.trail-item.hiked.selected {
+    border-left: 4px solid #007cbf;
+    background-color: #e6f3ff;
+}
+
+.trail-item.hiked.selected .trail-name {
+    color: #007cbf;
+}
+
+/* Selected unhiked trail - purple */
+.trail-item.unhiked.selected {
+    border-left: 4px solid #6f42c1;
+    background-color: #f3e8ff;
+}
+
+.trail-item.unhiked.selected .trail-name {
+    color: #6f42c1;
 }
 
 .trail-item {
@@ -406,7 +432,7 @@ body {
 }
 
 .trail-item.hiked .trail-status {
-    color: #28a745;
+    color: #007cbf;
 }
 
 .trail-item.unhiked .trail-status {

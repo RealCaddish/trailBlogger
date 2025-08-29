@@ -232,7 +232,7 @@ class TrailBlogger {
             style: (feature) => {
                 const status = feature.properties.status;
                 return {
-                    color: status === 'hiked' ? '#28a745' : '#ffc107',
+                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
                     weight: 4,
                     opacity: 0.8
                 };
@@ -473,6 +473,39 @@ class TrailBlogger {
         }
     }
     
+    highlightParkForTrail(parkName) {
+        // Clear any existing park highlight
+        if (this.trailParkHighlight) {
+            this.map.removeLayer(this.trailParkHighlight);
+            this.trailParkHighlight = null;
+        }
+        
+        // Find the park in the parks data
+        const park = this.parksData.features.find(feature => 
+            feature.properties.NAME === parkName
+        );
+        
+        if (park) {
+            // Create a highlight layer for the park
+            this.trailParkHighlight = L.geoJSON(park, {
+                style: {
+                    color: '#28a745',
+                    weight: 2,
+                    opacity: 0.6,
+                    fillColor: '#28a745',
+                    fillOpacity: 0.1
+                },
+                onEachFeature: (feature, layer) => {
+                    const parkName = feature.properties.NAME;
+                    layer.bindPopup(`<b>${parkName}</b><br>Type: ${feature.properties.FEATTYPE || 'Unknown'}`);
+                }
+            });
+            
+            // Add the park highlight layer
+            this.map.addLayer(this.trailParkHighlight);
+        }
+    }
+    
     filterTrails(filter) {
         this.currentFilter = filter;
         
@@ -517,9 +550,25 @@ class TrailBlogger {
     updateStatistics() {
         const totalTrails = this.trails.length;
         const hikedTrails = this.trails.filter(trail => trail.status === 'hiked').length;
-        const totalMiles = this.trails
-            .filter(trail => trail.status === 'hiked')
-            .reduce((sum, trail) => sum + trail.length, 0);
+        
+        console.log('Updating statistics...');
+        console.log('Total trails:', totalTrails);
+        console.log('Hiked trails:', hikedTrails);
+        
+        // Debug: Log each hiked trail and its length
+        const hikedTrailsList = this.trails.filter(trail => trail.status === 'hiked');
+        console.log('Hiked trails details:');
+        hikedTrailsList.forEach(trail => {
+            console.log(`  - ${trail.name}: ${trail.length} miles (type: ${typeof trail.length})`);
+        });
+        
+        const totalMiles = hikedTrailsList.reduce((sum, trail) => {
+            const length = parseFloat(trail.length) || 0;
+            console.log(`Adding ${length} miles from ${trail.name}`);
+            return sum + length;
+        }, 0);
+        
+        console.log('Total miles calculated:', totalMiles);
         
         document.getElementById('totalTrails').textContent = totalTrails;
         document.getElementById('hikedTrails').textContent = hikedTrails;
@@ -800,9 +849,25 @@ class TrailBlogger {
                 const geojson = JSON.parse(e.target.result);
                 const preview = document.getElementById('geojsonPreview');
                 preview.textContent = JSON.stringify(geojson, null, 2);
+                
+                // Calculate and display trail length
+                let coordinates = [];
+                if (geojson.type === 'Feature') {
+                    coordinates = this.extractCoordinates(geojson.geometry);
+                } else if (geojson.type === 'FeatureCollection' && geojson.features.length > 0) {
+                    coordinates = this.extractCoordinates(geojson.features[0].geometry);
+                }
+                
+                if (coordinates.length > 0) {
+                    const length = this.calculateTrailLength(coordinates);
+                    document.getElementById('importTrailLength').value = `${length} miles`;
+                } else {
+                    document.getElementById('importTrailLength').value = 'Could not calculate length';
+                }
             } catch (error) {
                 console.error('Invalid GeoJSON file:', error);
                 alert('Invalid GeoJSON file. Please check the format.');
+                document.getElementById('importTrailLength').value = 'Error reading file';
             }
         };
         reader.readAsText(file);
@@ -828,24 +893,34 @@ class TrailBlogger {
                 console.log('Successfully parsed GeoJSON:', geojson);
                 console.log('GeoJSON type:', geojson.type);
                 
-                // Extract trail data from GeoJSON
-                let trailData = null;
-                
-                if (geojson.type === 'Feature') {
-                    console.log('Processing single Feature');
-                    trailData = this.extractTrailFromFeature(geojson, trailName, trailPark);
-                } else if (geojson.type === 'FeatureCollection') {
-                    console.log('Processing FeatureCollection with', geojson.features.length, 'features');
-                    if (geojson.features.length > 0) {
-                        trailData = this.extractTrailFromFeature(geojson.features[0], trailName, trailPark);
-                    } else {
-                        alert('FeatureCollection contains no features.');
-                        return;
-                    }
-                } else {
-                    alert('Unsupported GeoJSON type. Please use Feature or FeatureCollection.');
-                    return;
-                }
+                        // Extract trail data from GeoJSON
+        let trailData = null;
+        
+        if (geojson.type === 'Feature') {
+            console.log('Processing single Feature');
+            trailData = this.extractTrailFromFeature(geojson, trailName, trailPark);
+        } else if (geojson.type === 'FeatureCollection') {
+            console.log('Processing FeatureCollection with', geojson.features.length, 'features');
+            if (geojson.features.length > 0) {
+                trailData = this.extractTrailFromFeature(geojson.features[0], trailName, trailPark);
+            } else {
+                alert('FeatureCollection contains no features.');
+                return;
+            }
+        } else {
+            alert('Unsupported GeoJSON type. Please use Feature or FeatureCollection.');
+            return;
+        }
+        
+        // Use the calculated length from the import form if available
+        const calculatedLength = document.getElementById('importTrailLength').value;
+        if (calculatedLength && calculatedLength !== 'Could not calculate length' && calculatedLength !== 'Error reading file') {
+            const lengthMatch = calculatedLength.match(/(\d+\.?\d*)/);
+            if (lengthMatch) {
+                trailData.length = parseFloat(lengthMatch[1]);
+                console.log('Using calculated length from form:', trailData.length);
+            }
+        }
                 
                 if (!trailData) {
                     alert('Could not extract trail data from GeoJSON file.');
@@ -1006,6 +1081,15 @@ class TrailBlogger {
     selectTrail(trailName) {
         // Clear any existing highlight first
         this.clearTrailHighlight();
+        
+        // Find the selected trail
+        const trail = this.trails.find(t => t.name === trailName);
+        if (!trail) return;
+        
+        // Highlight the park polygon if the trail has a park
+        if (trail.park) {
+            this.highlightParkForTrail(trail.park);
+        }
         
         // Zoom to trail and show description
         this.zoomToTrail(trailName);
@@ -1176,7 +1260,7 @@ class TrailBlogger {
                 // Always reset to default style based on status
                 const status = layer.feature.properties.status;
                 layer.setStyle({
-                    color: status === 'hiked' ? '#28a745' : '#ffc107',
+                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
                     weight: 4,
                     opacity: 0.8
                 });
@@ -1184,6 +1268,12 @@ class TrailBlogger {
                 // Clear any stored original style
                 delete layer.originalStyle;
             });
+        }
+        
+        // Clear park highlight
+        if (this.trailParkHighlight) {
+            this.map.removeLayer(this.trailParkHighlight);
+            this.trailParkHighlight = null;
         }
         
         // Clear selected trail and reset header button
@@ -1422,7 +1512,7 @@ class TrailBlogger {
             style: (feature) => {
                 const status = feature.properties.status;
                 return {
-                    color: status === 'hiked' ? '#28a745' : '#ffc107',
+                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
                     weight: 4,
                     opacity: 0.8
                 };
