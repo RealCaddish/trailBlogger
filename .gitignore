@@ -159,18 +159,17 @@ images/
 *.sqlite3
 
 # Trail Blogger specific data directories
-# Ignore data directory by default, but include specific files
-data/
+# Include specific data files, ignore the rest
+data/*
 !data/states.geojson
 !data/parks_simplified.json
 !data/trails.geojson
 !data/shared_trails.json
 !data/images/
-data/images/*
 !data/images/.gitkeep
 !data/trail_images/
 !data/trail_images/README.md
-data/trail_images/*/
+data/trail_images/*
 !data/trail_images/trail_*/
 data/trail_images/trail_*/*
 !data/trail_images/trail_*/*.jpg
