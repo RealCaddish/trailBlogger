@@ -615,6 +615,90 @@ class TrailBlogger {
         document.getElementById('restoreFileInput').click();
     }
     
+    showStorageWarningDialog(message, options) {
+        return new Promise((resolve) => {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            // Create dialog box
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: white;
+                border-radius: 8px;
+                padding: 20px;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            `;
+            
+            // Create message
+            const messageEl = document.createElement('div');
+            messageEl.style.cssText = `
+                margin-bottom: 20px;
+                line-height: 1.5;
+                white-space: pre-line;
+            `;
+            messageEl.textContent = message;
+            
+            // Create buttons container
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.style.cssText = `
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+            `;
+            
+            // Create buttons
+            options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.style.cssText = `
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    ${index === 0 ? 'background: #dc3545; color: white;' : 
+                      index === 1 ? 'background: #17a2b8; color: white;' : 
+                      'background: #6c757d; color: white;'}
+                `;
+                
+                button.addEventListener('click', () => {
+                    document.body.removeChild(overlay);
+                    resolve(option.value);
+                });
+                
+                buttonsContainer.appendChild(button);
+            });
+            
+            // Assemble dialog
+            dialog.appendChild(messageEl);
+            dialog.appendChild(buttonsContainer);
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                    resolve('cancel');
+                }
+            });
+        });
+    }
+    
     showDataManagement() {
         const usageMB = this.checkLocalStorageUsage();
         const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
@@ -736,33 +820,59 @@ class TrailBlogger {
         const formData = new FormData(document.getElementById('trailForm'));
         const trailName = formData.get('trailName');
         
-        // Check storage usage before processing images
-        const currentUsage = this.checkLocalStorageUsage();
-        if (currentUsage > 8) {
-            const shouldContinue = confirm(
-                `Warning: Your trail data is taking up ${currentUsage.toFixed(2)} MB of storage.\n\n` +
-                `This is close to the localStorage limit and may cause errors.\n\n` +
-                `Would you like to:\n` +
-                `1. Continue anyway (may fail)\n` +
-                `2. Create a backup and clear old data first\n` +
-                `3. Cancel the save operation`
-            );
-            
-            if (shouldContinue === false) {
-                // Clear the image preview to prevent duplication
-                document.getElementById('imagePreview').innerHTML = '';
-                return false;
+        // Check if this is an edit or new trail
+        const existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
+        const trailId = existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now();
+        
+        // Upload images to backend first
+        let imageUrls = [];
+        if (this.imagePreviewFiles && this.imagePreviewFiles.length > 0) {
+            try {
+                const uploadFormData = new FormData();
+                this.imagePreviewFiles.forEach(file => {
+                    uploadFormData.append('images', file);
+                });
+                
+                const response = await fetch(`/api/trails/${trailId}/images`, {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    imageUrls = result.images.map(img => img.url);
+                    console.log('Images uploaded successfully:', imageUrls);
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to upload images: ${error.error}`);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error uploading images:', error);
+                alert('Failed to upload images. Please try again.');
+                return;
             }
         }
         
-        // Check if this is an edit or new trail
-        const existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
+        // Get existing images from backend
+        let existingImages = [];
+        if (existingTrailIndex >= 0) {
+            try {
+                const response = await fetch(`/api/trails/${trailId}/images`);
+                if (response.ok) {
+                    const result = await response.json();
+                    existingImages = result.images.map(img => img.url);
+                }
+            } catch (error) {
+                console.error('Error fetching existing images:', error);
+            }
+        }
         
-        // Get images properly (preserve existing + add new)
-        const images = await this.getImageFiles();
+        // Combine existing and new images
+        const allImages = [...existingImages, ...imageUrls];
         
         const trailData = {
-            id: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now(),
+            id: trailId,
             name: trailName,
             park: formData.get('trailPark') || '',
             length: parseFloat(formData.get('trailLength')),
@@ -770,7 +880,7 @@ class TrailBlogger {
             status: formData.get('trailStatus'),
             dateHiked: formData.get('trailDate') || null,
             blogPost: formData.get('trailBlog'),
-            images: images,
+            images: allImages,
             coordinates: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].coordinates : [],
             // Preserve original GeoJSON geometry if it exists
             originalGeoJSON: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].originalGeoJSON : null
@@ -798,6 +908,9 @@ class TrailBlogger {
             this.selectedTrail = trailData;
             this.showTrailDescription(trailName);
         }
+        
+        // Clear the image preview files
+        this.imagePreviewFiles = [];
     }
     
     async getImageFiles() {
@@ -988,7 +1101,7 @@ class TrailBlogger {
         }
     }
     
-    handleImagePreview(event) {
+    async handleImagePreview(event) {
         const files = event.target.files;
         const preview = document.getElementById('imagePreview');
         
@@ -996,31 +1109,36 @@ class TrailBlogger {
         const existingImages = preview.querySelectorAll('.image-preview-item').length;
         if (existingImages + files.length > 10) {
             alert(`You can only upload a maximum of 10 images total. You currently have ${existingImages} images and are trying to add ${files.length} more.`);
-            // Reset the file input
             event.target.value = '';
             return;
         }
         
-        // Don't clear the preview - we want to keep existing images
-        // Just add new ones to the existing preview
-        
+        // Process each file
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             
-            // Check file size
-            const fileSizeMB = file.size / (1024 * 1024);
-            if (fileSizeMB > 2) {
-                alert(`Image "${file.name}" is too large (${fileSizeMB.toFixed(1)}MB). Maximum size is 2MB per image.`);
+            // Check individual file size (10MB limit for backend)
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`File "${file.name}" is too large. Maximum size is 10MB per image.`);
+                continue;
+            }
+            
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert(`File "${file.name}" is not an image.`);
                 continue;
             }
             
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Create a new image preview item with remove button and file info
-                const imageItem = document.createElement('div');
-                imageItem.className = 'image-preview-item';
-                imageItem.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" />
+                const dataUrl = e.target.result;
+                const fileSizeMB = file.size / (1024 * 1024);
+                
+                // Create preview element
+                const previewItem = document.createElement('div');
+                previewItem.className = 'image-preview-item';
+                previewItem.innerHTML = `
+                    <img src="${dataUrl}" alt="Preview">
                     <div class="image-info">
                         <span class="file-name">${file.name}</span>
                         <span class="file-size">${fileSizeMB.toFixed(1)}MB</span>
@@ -1029,14 +1147,18 @@ class TrailBlogger {
                         <i class="fas fa-times"></i>
                     </button>
                 `;
-                preview.appendChild(imageItem);
+                preview.appendChild(previewItem);
+                
+                // Store the file for upload
+                if (!this.imagePreviewFiles) {
+                    this.imagePreviewFiles = [];
+                }
+                this.imagePreviewFiles.push(file);
             };
             reader.readAsDataURL(file);
         }
         
-        // Update file input to show current selection
-        this.updateFileInputInfo();
-        console.log(`handleImagePreview: Added ${files.length} new images to preview`);
+        console.log('handleImagePreview: Added', files.length, 'new images to preview');
     }
     
     // Update file input information display
@@ -1323,7 +1445,7 @@ class TrailBlogger {
     }
     
     
-    showTrailDescription(trailName) {
+    async showTrailDescription(trailName) {
         const trail = this.trails.find(t => t.name === trailName);
         if (!trail) return;
         
@@ -1343,14 +1465,27 @@ class TrailBlogger {
             description.innerHTML = '<p>No description available for this trail.</p>';
         }
         
-        // Update images
+        // Load images from backend
         const imageGallery = document.getElementById('imageGallery');
-        if (trail.images && trail.images.length > 0) {
-            imageGallery.innerHTML = trail.images.map(img => 
-                `<img src="${img}" alt="Trail photo" onclick="trailBlogger.openImageModal('${img}')" />`
-            ).join('');
-        } else {
-            imageGallery.innerHTML = '<p>No photos available for this trail.</p>';
+        imageGallery.innerHTML = '<p>Loading images...</p>';
+        
+        try {
+            const response = await fetch(`/api/trails/${trail.id}/images`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.images && result.images.length > 0) {
+                    imageGallery.innerHTML = result.images.map(img => 
+                        `<img src="${img.url}" alt="Trail photo" onclick="trailBlogger.openImageModal('${img.url}')" />`
+                    ).join('');
+                } else {
+                    imageGallery.innerHTML = '<p>No photos available for this trail.</p>';
+                }
+            } else {
+                imageGallery.innerHTML = '<p>Error loading images.</p>';
+            }
+        } catch (error) {
+            console.error('Error loading images:', error);
+            imageGallery.innerHTML = '<p>Error loading images.</p>';
         }
         
         // Update stats
@@ -1529,6 +1664,36 @@ class TrailBlogger {
                 trails.push(trailData);
             }
             
+            // Final storage check before saving
+            const finalUsage = this.checkLocalStorageUsage();
+            const trailsDataSize = JSON.stringify(trails).length / (1024 * 1024);
+            const projectedFinalUsage = finalUsage + trailsDataSize;
+            
+            if (projectedFinalUsage > 5) {
+                const choice = await this.showStorageWarningDialog(
+                    `Warning: Saving this trail will increase storage usage to approximately ${projectedFinalUsage.toFixed(2)} MB.\n\n` +
+                    `This exceeds the recommended localStorage limit and will likely fail.\n\n` +
+                    `What would you like to do?`,
+                    [
+                        { text: 'Continue Anyway', value: 'continue' },
+                        { text: 'Manage Storage First', value: 'manage' },
+                        { text: 'Cancel Save', value: 'cancel' }
+                    ]
+                );
+                
+                if (choice === 'cancel') {
+                    // Clear the image preview to prevent duplication
+                    document.getElementById('imagePreview').innerHTML = '';
+                    return false;
+                } else if (choice === 'manage') {
+                    // Clear the image preview and open data management
+                    document.getElementById('imagePreview').innerHTML = '';
+                    this.showDataManagement();
+                    return false;
+                }
+                // If 'continue', proceed with the save
+            }
+            
             // Try to save with error handling
             try {
                 localStorage.setItem('trailBlogger_trails', JSON.stringify(trails));
@@ -1546,6 +1711,8 @@ class TrailBlogger {
                         console.log('Successfully saved after cleanup');
                     } catch (retryError) {
                         console.error('Still cannot save after cleanup:', retryError);
+                        // Clear the image preview to prevent duplication
+                        document.getElementById('imagePreview').innerHTML = '';
                         alert(
                             'Unable to save trail data due to storage limits.\n\n' +
                             'Please:\n' +
