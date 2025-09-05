@@ -27,20 +27,11 @@
                     <h1>Trail Blogger</h1>
                 </div>
                 <div class="header-controls">
-                    <button id="backupBtn" class="btn btn-secondary" title="Create Backup">
-                        <i class="fas fa-download"></i> Backup
-                    </button>
-                    <button id="restoreBtn" class="btn btn-secondary" title="Restore from Backup">
-                        <i class="fas fa-upload"></i> Restore
-                    </button>
-                    <button id="storageBtn" class="btn btn-secondary" title="Storage Management">
-                        <i class="fas fa-hdd"></i> Storage
+                    <button id="backupBtn" class="btn btn-secondary" title="Data Management">
+                        <i class="fas fa-database"></i> Data
                     </button>
                     <button id="importBtn" class="btn btn-primary">
                         <i class="fas fa-upload"></i> Import Trail
-                    </button>
-                    <button id="addTrailBtn" class="btn btn-secondary">
-                        <i class="fas fa-plus"></i> Add Trail
                     </button>
                 </div>
             </div>
@@ -119,7 +110,7 @@
                     <h2 id="descriptionTitle">Trail Details</h2>
                     <div class="trail-meta" id="trailMeta">
                         <span id="trailDifficulty">Difficulty</span>
-                        <span id="trailLength">Length</span>
+                        <span id="trailLengthDisplay">Length</span>
                         <span id="trailStatus">Status</span>
                     </div>
                 </div>
@@ -203,6 +194,10 @@
                         <div class="form-group">
                             <label for="trailImages">Images:</label>
                             <input type="file" id="trailImages" name="trailImages" multiple accept="image/*">
+                            <div class="file-limits">
+                                <small>Maximum 10 images • 2MB per image • 10MB total</small>
+                                <small>Images are automatically compressed for optimal storage</small>
+                            </div>
                             <div id="imagePreview" class="image-preview"></div>
                         </div>
                         
@@ -265,6 +260,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-            <script src="app.js?v=20241213"></script>
+            <script src="app.js?v=20241217"></script>
 </body>
 </html>

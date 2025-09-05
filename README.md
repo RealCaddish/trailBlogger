@@ -2,7 +2,7 @@
 
 A web-based application for tracking and documenting your hiking adventures. Create your personal trail journal with photos, descriptions, and trail data.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.7 or higher
@@ -24,7 +24,7 @@ A web-based application for tracking and documenting your hiking adventures. Cre
 3. **Open your browser**
    Navigate to `http://localhost:5000`
 
-## 🔒 Data Privacy & Security
+## Data Privacy & Security
 
 ### Your Data Stays Local
 - **All trail data, images, and journal entries are stored locally on your machine**
@@ -33,13 +33,13 @@ A web-based application for tracking and documenting your hiking adventures. Cre
 
 ### What's Included vs. What's Private
 
-#### ✅ **Public Repository (Safe to Share)**
+#### **Public Repository (Safe to Share)**
 - Application code and functionality
 - UI/UX components
 - Map integration
 - Sample data structure (no personal content)
 
-#### 🔒 **Private Data (Never Shared)**
+#### **Private Data (Never Shared)**
 - Your trail coordinates and routes
 - Personal photos and images
 - Journal entries and descriptions
@@ -54,14 +54,14 @@ trail-blogger/
 ├── styles.css            # Styling
 ├── server.py             # Local server
 ├── data_manager.py       # Data handling
-├── data/                 # 🔒 YOUR PRIVATE DATA (not in repo)
+├── data/                 # YOUR PRIVATE DATA (not in repo)
 │   ├── trails.geojson    # Your trail data
 │   ├── images/           # Your photos
 │   └── backup_*/         # Your backups
 └── logo/                 # Application branding
 ```
 
-## 📁 Setting Up Your Personal Data
+## Setting Up Your Personal Data
 
 ### First Time Setup
 1. **Create your data directory** (automatically created on first run)
@@ -74,7 +74,7 @@ trail-blogger/
 - **Restore**: Use the backup file to restore your data on a new machine
 - **Export**: Your data is automatically saved locally and persists between sessions
 
-## 🗺️ Features
+## Features
 
 ### Trail Management
 - **Import GeoJSON files** from mapping applications
@@ -100,7 +100,7 @@ trail-blogger/
 - **Backup system** for data protection
 - **Cross-session persistence** (data survives browser restarts)
 
-## 🔧 Configuration
+## Configuration
 
 ### Customizing for Your Region
 Edit `app.js` to set your preferred default location:
@@ -123,7 +123,7 @@ this.parks = {
 2. Update the park selector in `index.html`
 3. Restart the application
 
-## 🛠️ Development
+## Development
 
 ### Local Development
 ```bash
@@ -149,7 +149,7 @@ http://localhost:5000/api/health
 └── README.md           # This file
 ```
 
-## 🔒 Privacy & Security Features
+## Privacy & Security Features
 
 ### Data Protection
 - **Local-only storage**: All data stays on your machine
@@ -163,7 +163,7 @@ http://localhost:5000/api/health
 - **Data integrity**: Validation and error handling
 - **Recovery options**: Restore from backup files
 
-## 🚨 Important Notes
+## Important Notes
 
 ### Before Making Repository Public
 1. **Verify `.gitignore`** excludes all personal data
@@ -177,7 +177,7 @@ http://localhost:5000/api/health
 - **Version control**: Consider using git for your personal data directory
 - **Cloud storage**: Sync backups to cloud storage for additional safety
 
-## 🤝 Contributing
+## Contributing
 
 ### For Personal Use
 - Fork the repository for your own use
@@ -190,11 +190,11 @@ http://localhost:5000/api/health
 - Share customizations and enhancements
 - Help improve documentation
 
-## 📄 License
+## License
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## 🆘 Support
+## Support
 
 ### Common Issues
 1. **Data not persisting**: Check browser localStorage settings

@@ -292,11 +292,8 @@ class TrailBlogger {
         document.getElementById('showUnhiked').addEventListener('click', () => this.filterTrails('unhiked'));
         
         // Modal controls
-        document.getElementById('addTrailBtn').addEventListener('click', () => this.showTrailModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
-        document.getElementById('backupBtn').addEventListener('click', () => this.createBackup());
-        document.getElementById('restoreBtn').addEventListener('click', () => this.showRestoreDialog());
-        document.getElementById('storageBtn').addEventListener('click', () => this.showStorageManagement());
+        document.getElementById('backupBtn').addEventListener('click', () => this.showDataManagement());
         
         // Close modals
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -582,25 +579,31 @@ class TrailBlogger {
         const form = document.getElementById('trailForm');
         const title = document.getElementById('modalTitle');
         
+        modal.style.display = 'block';
+        
         if (trailName) {
             // Edit existing trail
             const trail = this.trails.find(t => t.name === trailName);
             if (trail) {
+                console.log('Found trail for editing:', trail);
+                console.log('Trail length:', trail.length, 'Type:', typeof trail.length);
                 title.textContent = `Edit Trail: ${trail.name}`;
-                this.populateTrailForm(trail);
+                // Small delay to ensure modal is fully displayed before populating
+                setTimeout(() => this.populateTrailForm(trail), 10);
             }
         } else if (this.selectedTrail) {
             // Edit currently selected trail
+            console.log('Editing selected trail:', this.selectedTrail);
+            console.log('Selected trail length:', this.selectedTrail.length, 'Type:', typeof this.selectedTrail.length);
             title.textContent = `Edit Trail: ${this.selectedTrail.name}`;
-            this.populateTrailForm(this.selectedTrail);
+            // Small delay to ensure modal is fully displayed before populating
+            setTimeout(() => this.populateTrailForm(this.selectedTrail), 10);
         } else {
             // Add new trail
             title.textContent = 'Add New Trail';
             form.reset();
             document.getElementById('imagePreview').innerHTML = '';
         }
-        
-        modal.style.display = 'block';
     }
     
     showImportModal() {
@@ -612,23 +615,24 @@ class TrailBlogger {
         document.getElementById('restoreFileInput').click();
     }
     
-    showStorageManagement() {
+    showDataManagement() {
         const usageMB = this.checkLocalStorageUsage();
         const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
         const totalImages = trails.reduce((sum, t) => sum + (t.images ? t.images.length : 0), 0);
         
         const message = 
-            `Storage Management\n\n` +
+            `Data Management\n\n` +
             `Current Usage: ${usageMB.toFixed(2)} MB\n` +
             `Total Trails: ${trails.length}\n` +
             `Total Images: ${totalImages}\n\n` +
             `Choose an action:\n\n` +
-            `1. Create Backup (recommended before cleanup)\n` +
-            `2. Remove All Images (frees space, keeps trail data)\n` +
-            `3. Clear All Data (removes everything)\n` +
-            `4. Clean Old Backups (removes old backup files)\n` +
-            `5. Export Data for Sharing (creates shared_trails.json)\n` +
-            `6. Cancel`;
+            `1. Create Backup (download complete backup)\n` +
+            `2. Restore from Backup (upload backup file)\n` +
+            `3. Remove All Images (frees space, keeps trail data)\n` +
+            `4. Clear All Data (removes everything)\n` +
+            `5. Clean Old Backups (removes old backup files)\n` +
+            `6. Export Data for Sharing (creates shared_trails.json)\n` +
+            `7. Cancel`;
         
         const choice = prompt(message, '1');
         
@@ -637,16 +641,19 @@ class TrailBlogger {
                 this.createBackup();
                 break;
             case '2':
+                this.showRestoreDialog();
+                break;
+            case '3':
                 if (confirm('Remove all images from trails? This will free storage space but you will lose all photos.')) {
                     this.removeImagesFromTrails();
                 }
                 break;
-            case '3':
+            case '4':
                 if (confirm('Clear ALL trail data? This cannot be undone unless you have a backup.')) {
                     this.clearAllData();
                 }
                 break;
-            case '4':
+            case '5':
                 const freedSpace = this.cleanupOldBackups();
                 if (freedSpace > 0) {
                     alert(`Cleaned up old backups. Freed ${(freedSpace / 1024).toFixed(2)} KB of space.`);
@@ -654,10 +661,10 @@ class TrailBlogger {
                     alert('No old backups found to clean up.');
                 }
                 break;
-            case '5':
+            case '6':
                 this.exportDataForSharing();
                 break;
-            case '6':
+            case '7':
             default:
                 // Cancel
                 break;
@@ -672,13 +679,26 @@ class TrailBlogger {
     
     populateTrailForm(trail) {
         console.log('Populating form with trail data:', trail);
+        console.log('Trail length value:', trail.length, 'Type:', typeof trail.length);
         
+        // Set form values directly without resetting first
         document.getElementById('trailName').value = trail.name || '';
         document.getElementById('trailPark').value = trail.park || '';
         
-        // Ensure length is properly converted to string and handle null/undefined
-        const lengthValue = trail.length !== null && trail.length !== undefined ? trail.length.toString() : '';
-        document.getElementById('trailLength').value = lengthValue;
+        // Handle length more robustly
+        let lengthValue = '';
+        if (trail.length !== null && trail.length !== undefined) {
+            if (typeof trail.length === 'number') {
+                lengthValue = trail.length.toString();
+            } else if (typeof trail.length === 'string') {
+                lengthValue = trail.length;
+            } else {
+                lengthValue = String(trail.length);
+            }
+        }
+        
+        const lengthInput = document.getElementById('trailLength');
+        lengthInput.value = lengthValue;
         console.log('Setting trail length to:', lengthValue, 'from original:', trail.length);
         
         document.getElementById('trailDifficulty').value = trail.difficulty || '';
@@ -690,6 +710,9 @@ class TrailBlogger {
         
         document.getElementById('trailDate').value = trail.dateHiked || '';
         document.getElementById('trailBlog').value = trail.blogPost || '';
+        
+        // Clear the file input to prevent confusion
+        document.getElementById('trailImages').value = '';
         
         // Show existing images with remove buttons
         const imagePreview = document.getElementById('imagePreview');
@@ -712,6 +735,25 @@ class TrailBlogger {
     async saveTrail() {
         const formData = new FormData(document.getElementById('trailForm'));
         const trailName = formData.get('trailName');
+        
+        // Check storage usage before processing images
+        const currentUsage = this.checkLocalStorageUsage();
+        if (currentUsage > 8) {
+            const shouldContinue = confirm(
+                `Warning: Your trail data is taking up ${currentUsage.toFixed(2)} MB of storage.\n\n` +
+                `This is close to the localStorage limit and may cause errors.\n\n` +
+                `Would you like to:\n` +
+                `1. Continue anyway (may fail)\n` +
+                `2. Create a backup and clear old data first\n` +
+                `3. Cancel the save operation`
+            );
+            
+            if (shouldContinue === false) {
+                // Clear the image preview to prevent duplication
+                document.getElementById('imagePreview').innerHTML = '';
+                return false;
+            }
+        }
         
         // Check if this is an edit or new trail
         const existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
@@ -762,42 +804,59 @@ class TrailBlogger {
         const imageFiles = document.getElementById('trailImages').files;
         const images = [];
         
-        // First, add any existing images that are already in the preview
-        const existingImages = document.getElementById('imagePreview').querySelectorAll('img');
-        existingImages.forEach(img => {
+        // Always get images from the current preview - this includes existing + newly added
+        const previewImages = document.getElementById('imagePreview').querySelectorAll('img');
+        
+        previewImages.forEach(img => {
             if (img.src && img.src.startsWith('data:')) {
                 images.push(img.src);
             }
         });
         
-        // Then add any new files that were selected
-        const newImagePromises = [];
-        for (let i = 0; i < imageFiles.length; i++) {
-            const promise = new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    // Compress the image to reduce storage size
-                    this.compressImage(e.target.result, 800, 0.8).then(compressedImage => {
-                        resolve(compressedImage);
-                    }).catch(() => {
-                        // If compression fails, use original
-                        resolve(e.target.result);
-                    });
-                };
-                reader.readAsDataURL(imageFiles[i]);
-            });
-            newImagePromises.push(promise);
+        // Add any new files that were selected but not yet in preview
+        if (imageFiles.length > 0) {
+            // Check total file size before processing
+            const totalSizeMB = Array.from(imageFiles).reduce((total, file) => total + file.size, 0) / (1024 * 1024);
+            
+            if (totalSizeMB > 10) {
+                alert(`Total image size (${totalSizeMB.toFixed(1)}MB) exceeds 10MB limit. Please select fewer or smaller images.`);
+                return images;
+            }
+            
+            const newImagePromises = [];
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
+                
+                // Check individual file size (2MB limit per image)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert(`Image "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum size is 2MB per image.`);
+                    continue;
+                }
+                
+                const promise = new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Enhanced compression with WebP support and better quality control
+                        this.compressImageEnhanced(e.target.result, file.type, 800, 0.8).then(compressedImage => {
+                            resolve(compressedImage);
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+                newImagePromises.push(promise);
+            }
+            
+            // Wait for all new images to be processed
+            const newImages = await Promise.all(newImagePromises);
+            images.push(...newImages);
         }
         
-        // Wait for all new images to be processed
-        const newImages = await Promise.all(newImagePromises);
-        images.push(...newImages);
-        
+        console.log(`getImageFiles: Found ${images.length} total images (${previewImages.length} in preview, ${imageFiles.length} new files)`);
         return images;
     }
     
     // Compress images to reduce localStorage size
-    async compressImage(dataUrl, maxWidth = 800, quality = 0.8) {
+    async compressImage(dataUrl, maxWidth = 600, quality = 0.7) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -810,13 +869,17 @@ class TrailBlogger {
                 let compressionWidth = maxWidth;
                 
                 if (currentUsage > 7) {
-                    // More aggressive compression when storage is getting full
-                    compressionQuality = 0.6;
-                    compressionWidth = 600;
+                    // Very aggressive compression when storage is getting full
+                    compressionQuality = 0.5;
+                    compressionWidth = 400;
                 } else if (currentUsage > 5) {
+                    // More aggressive compression
+                    compressionQuality = 0.6;
+                    compressionWidth = 500;
+                } else if (currentUsage > 3) {
                     // Moderate compression
                     compressionQuality = 0.7;
-                    compressionWidth = 700;
+                    compressionWidth = 600;
                 }
                 
                 // Calculate new dimensions
@@ -833,13 +896,89 @@ class TrailBlogger {
                 ctx.drawImage(img, 0, 0, width, height);
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
                 
-                console.log(`Compressed image: ${width}x${height}, quality: ${compressionQuality}`);
+                console.log(`Compressed image: ${width}x${height}, quality: ${compressionQuality}, storage usage: ${currentUsage.toFixed(2)}MB`);
                 resolve(compressedDataUrl);
             };
             img.onerror = reject;
             img.src = dataUrl;
         });
     }
+    
+    // Enhanced image compression with WebP support and better quality control
+    async compressImageEnhanced(dataUrl, mimeType, maxWidth = 800, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Check current storage usage and adjust compression accordingly
+                const currentUsage = this.checkLocalStorageUsage();
+                let compressionQuality = quality;
+                let compressionWidth = maxWidth;
+                
+                // Dynamic compression based on storage usage
+                if (currentUsage > 7) {
+                    // Very aggressive compression when storage is getting full
+                    compressionQuality = 0.4;
+                    compressionWidth = 400;
+                } else if (currentUsage > 5) {
+                    // More aggressive compression
+                    compressionQuality = 0.6;
+                    compressionWidth = 600;
+                } else if (currentUsage > 3) {
+                    // Moderate compression
+                    compressionQuality = 0.7;
+                    compressionWidth = 700;
+                }
+                
+                // Calculate new dimensions maintaining aspect ratio
+                let { width, height } = img;
+                if (width > compressionWidth) {
+                    height = (height * compressionWidth) / width;
+                    width = compressionWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Try WebP first for better compression, fallback to JPEG
+                let compressedDataUrl;
+                try {
+                    if (this.supportsWebP()) {
+                        compressedDataUrl = canvas.toDataURL('image/webp', compressionQuality);
+                    } else {
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
+                    }
+                } catch (e) {
+                    // Fallback to JPEG if WebP fails
+                    compressedDataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
+                }
+                
+                console.log(`Compressed image: ${width}x${height}, quality: ${compressionQuality}, format: ${compressedDataUrl.split(';')[0]}, storage usage: ${currentUsage.toFixed(2)}MB`);
+                resolve(compressedDataUrl);
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
+        });
+    }
+    
+    // Check if browser supports WebP
+    supportsWebP() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        try {
+            return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+
     
     removeImage(index) {
         // Remove the image from the preview
@@ -852,14 +991,72 @@ class TrailBlogger {
     handleImagePreview(event) {
         const files = event.target.files;
         const preview = document.getElementById('imagePreview');
-        preview.innerHTML = '';
+        
+        // Check current total images (existing + new)
+        const existingImages = preview.querySelectorAll('.image-preview-item').length;
+        if (existingImages + files.length > 10) {
+            alert(`You can only upload a maximum of 10 images total. You currently have ${existingImages} images and are trying to add ${files.length} more.`);
+            // Reset the file input
+            event.target.value = '';
+            return;
+        }
+        
+        // Don't clear the preview - we want to keep existing images
+        // Just add new ones to the existing preview
         
         for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Check file size
+            const fileSizeMB = file.size / (1024 * 1024);
+            if (fileSizeMB > 2) {
+                alert(`Image "${file.name}" is too large (${fileSizeMB.toFixed(1)}MB). Maximum size is 2MB per image.`);
+                continue;
+            }
+            
             const reader = new FileReader();
             reader.onload = (e) => {
-                preview.innerHTML += `<img src="${e.target.result}" alt="Preview" />`;
+                // Create a new image preview item with remove button and file info
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-preview-item';
+                imageItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview" />
+                    <div class="image-info">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${fileSizeMB.toFixed(1)}MB</span>
+                    </div>
+                    <button type="button" class="remove-image-btn" onclick="this.parentElement.remove()" title="Remove image">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                preview.appendChild(imageItem);
             };
-            reader.readAsDataURL(files[i]);
+            reader.readAsDataURL(file);
+        }
+        
+        // Update file input to show current selection
+        this.updateFileInputInfo();
+        console.log(`handleImagePreview: Added ${files.length} new images to preview`);
+    }
+    
+    // Update file input information display
+    updateFileInputInfo() {
+        const fileInput = document.getElementById('trailImages');
+        const files = fileInput.files;
+        const totalSizeMB = Array.from(files).reduce((total, file) => total + file.size, 0) / (1024 * 1024);
+        
+        // Update the file limits display with current selection info
+        const fileLimits = document.querySelector('.file-limits');
+        if (fileLimits && files.length > 0) {
+            const currentInfo = fileLimits.querySelector('.current-selection');
+            if (currentInfo) {
+                currentInfo.remove();
+            }
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'current-selection';
+            infoDiv.innerHTML = `<small style="color: #28a745;">✓ Selected ${files.length} images (${totalSizeMB.toFixed(1)}MB total)</small>`;
+            fileLimits.appendChild(infoDiv);
         }
     }
     
@@ -1119,23 +1316,12 @@ class TrailBlogger {
         this.zoomToTrail(trailName);
         
         // Update the header button to show "Edit Trail" instead of "Add Trail"
-        this.updateHeaderButton();
     }
     
     editTrail(trailName) {
         this.showTrailModal(trailName);
     }
     
-    updateHeaderButton() {
-        const addTrailBtn = document.getElementById('addTrailBtn');
-        if (this.selectedTrail) {
-            addTrailBtn.innerHTML = '<i class="fas fa-edit"></i> Edit Trail';
-            addTrailBtn.title = 'Edit Selected Trail';
-        } else {
-            addTrailBtn.innerHTML = '<i class="fas fa-plus"></i> Add Trail';
-            addTrailBtn.title = 'Add New Trail';
-        }
-    }
     
     showTrailDescription(trailName) {
         const trail = this.trails.find(t => t.name === trailName);
@@ -1146,7 +1332,7 @@ class TrailBlogger {
         // Update description panel
         document.getElementById('descriptionTitle').textContent = trail.name;
         document.getElementById('trailDifficulty').textContent = trail.difficulty;
-        document.getElementById('trailLength').textContent = `${trail.length} miles`;
+        document.getElementById('trailLengthDisplay').textContent = `${trail.length} miles`;
         document.getElementById('trailStatus').textContent = trail.status;
         
         // Update description content
@@ -1200,7 +1386,6 @@ class TrailBlogger {
         document.getElementById('descriptionPanel').classList.add('active');
         
         // Update header button to show "Edit Trail"
-        this.updateHeaderButton();
     }
     
     closeDescriptionPanel() {
@@ -1208,7 +1393,6 @@ class TrailBlogger {
         this.selectedTrail = null;
         
         // Reset header button to "Add Trail"
-        this.updateHeaderButton();
     }
     
     zoomToTrail(trailName) {
@@ -1302,7 +1486,6 @@ class TrailBlogger {
         
         // Clear selected trail and reset header button
         this.selectedTrail = null;
-        this.updateHeaderButton();
     }
     
     openImageModal(imageSrc) {
@@ -1327,23 +1510,6 @@ class TrailBlogger {
     async saveTrailToFile(trailData) {
         try {
             console.log('Saving trail data to localStorage:', trailData.name);
-            
-            // Check storage usage before saving
-            const currentUsage = this.checkLocalStorageUsage();
-            if (currentUsage > 8) {
-                const shouldContinue = confirm(
-                    `Warning: Your trail data is taking up ${currentUsage.toFixed(2)} MB of storage.\n\n` +
-                    `This is close to the localStorage limit and may cause errors.\n\n` +
-                    `Would you like to:\n` +
-                    `1. Continue anyway (may fail)\n` +
-                    `2. Create a backup and clear old data first\n` +
-                    `3. Cancel the save operation`
-                );
-                
-                if (shouldContinue === false) {
-                    return false;
-                }
-            }
             
             // Load existing trails from localStorage
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
