@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css?v=20241212">
+    <link rel="stylesheet" href="styles.css?v=20241220d">
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,11 +27,14 @@
                     <h1>Trail Blogger</h1>
                 </div>
                 <div class="header-controls">
+                    <button id="aboutBtn" class="btn btn-about" title="About Trail Blogger">
+                        <i class="fas fa-info-circle"></i> About
+                    </button>
                     <button id="backupBtn" class="btn btn-secondary" title="Data Management">
                         <i class="fas fa-database"></i> Data
                     </button>
                     <button id="importBtn" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Import Trail
+                        <i class="fas fa-plus-circle"></i> Add Trail
                     </button>
                 </div>
             </div>
@@ -252,14 +255,53 @@
             </div>
         </div>
         
+        <!-- About Modal -->
+        <div id="aboutModal" class="modal">
+            <div class="modal-content about-modal-content">
+                <div class="modal-header">
+                    <h2> Greetings and welcome to Trail Blogger! </h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="about-section">
+                     
+                        <p>This is a personal project I created to document my hiking experiences. I wanted a place where I could keep track of the trails I explore, upload photos from my adventures, and write down my thoughts while they're still fresh.</p>
+                        <p>It's become my go-to space for preserving those moments on the trail—what I saw, how I felt, and the details I don't want to forget. If you hike too, I hope this helps you capture and remember your own journeys.</p>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>How to Use It</h3>
+                        <ul class="about-list">
+                            <li>Click <strong>Add Trail</strong> to import a GeoJSON trail file</li>
+                            <li>Add photos and write about your hike</li>
+                            <li>Track which trails you've completed</li>
+                            <li>Use the <strong>Data</strong> button to backup your journal</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>Setup (One-Time)</h3>
+                        <p>To get photos working, you need to run the Python backend:</p>
+                        <ol class="about-list">
+                            <li>Open terminal in the project folder</li>
+                            <li>Run: <code>python server.py</code></li>
+                            <li>Open: <code>http://localhost:5000</code></li>
+                        </ol>
+                        <p>That's it! Everything stays on your computer.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Hidden file input for restore functionality -->
         <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
+        <input type="file" id="restoreImagesInput" accept=".zip,.json" style="display: none;">
     </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-            <script src="app.js?v=20241217"></script>
+            <script src="app.js?v=20241220c"></script>
 </body>
 </html>

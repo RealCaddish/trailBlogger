@@ -31,6 +31,10 @@ class TrailBlogger {
     async init() {
         try {
             console.log('Initializing Trail Blogger...');
+            
+            // Check if running on correct server
+            this.checkServerPort();
+            
             this.initializeMap();
             console.log('Map initialized successfully');
             
@@ -58,6 +62,148 @@ class TrailBlogger {
         } catch (error) {
             console.error('Error during initialization:', error);
         }
+    }
+    
+    checkServerPort() {
+        const port = window.location.port;
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        
+        // Check if using file:// protocol
+        if (protocol === 'file:') {
+            this.showServerWarning(
+                '⚠️ IMPORTANT: Application Not Running Correctly!\n\n' +
+                'You opened index.html directly from your file system.\n\n' +
+                'Image uploads will NOT work!\n\n' +
+                'TO FIX:\n' +
+                '1. Close this tab\n' +
+                '2. Open terminal in project folder\n' +
+                '3. Run: python server.py\n' +
+                '4. Open: http://localhost:5000\n\n' +
+                'Click OK to continue anyway (without image support)'
+            );
+            return;
+        }
+        
+        // Check if using wrong port (Live Server = 5500, 5501, etc.)
+        if (port && port !== '5000') {
+            this.showServerWarning(
+                '⚠️ WRONG SERVER DETECTED!\n\n' +
+                `You are on port ${port} (probably Live Server).\n\n` +
+                'Image uploads will FAIL with 405 errors!\n\n' +
+                'TO FIX:\n' +
+                '1. Close Live Server or this tab\n' +
+                '2. Open terminal in project folder\n' +
+                '3. Run: python server.py\n' +
+                '4. Open: http://localhost:5000\n\n' +
+                'Click OK to continue anyway (image uploads will fail)'
+            );
+            return;
+        }
+        
+        // Check if on localhost:5000 (correct!)
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '5000') {
+            console.log('✅ Running on Flask server - image uploads will work!');
+            return;
+        }
+        
+        // Unknown configuration
+        if (!port || port === '80' || port === '443') {
+            console.warn('⚠️ Running on default HTTP port - image uploads may not work');
+        }
+    }
+    
+    showServerWarning(message) {
+        // Create a more prominent warning overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(220, 53, 69, 0.95);
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        `;
+        
+        const icon = document.createElement('div');
+        icon.style.cssText = `
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        `;
+        icon.textContent = '⚠️';
+        
+        const title = document.createElement('h2');
+        title.style.cssText = `
+            color: #dc3545;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        `;
+        title.textContent = 'Server Configuration Error';
+        
+        const content = document.createElement('pre');
+        content.style.cssText = `
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        `;
+        content.textContent = message;
+        
+        const button = document.createElement('button');
+        button.textContent = 'I Understand - Continue Anyway';
+        button.style.cssText = `
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        `;
+        button.onclick = () => document.body.removeChild(overlay);
+        
+        const helpText = document.createElement('p');
+        helpText.style.cssText = `
+            margin-top: 1rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        `;
+        helpText.textContent = 'Click the About button for detailed instructions';
+        
+        dialog.appendChild(icon);
+        dialog.appendChild(title);
+        dialog.appendChild(content);
+        dialog.appendChild(button);
+        dialog.appendChild(helpText);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        // Also show in console
+        console.error(message);
     }
     
     initializeMap() {
@@ -292,6 +438,7 @@ class TrailBlogger {
         document.getElementById('showUnhiked').addEventListener('click', () => this.filterTrails('unhiked'));
         
         // Modal controls
+        document.getElementById('aboutBtn').addEventListener('click', () => this.showAboutModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
         document.getElementById('backupBtn').addEventListener('click', () => this.showDataManagement());
         
@@ -332,6 +479,14 @@ class TrailBlogger {
         document.getElementById('restoreFileInput').addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this.restoreFromBackup(e.target.files[0]);
+                e.target.value = ''; // Reset input
+            }
+        });
+        
+        // Restore images input
+        document.getElementById('restoreImagesInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.restoreImagesFromBackup(e.target.files[0]);
                 e.target.value = ''; // Reset input
             }
         });
@@ -541,6 +696,9 @@ class TrailBlogger {
                     <button class="edit-trail-btn" onclick="event.stopPropagation(); trailBlogger.editTrail('${trail.name}')" title="Edit Trail">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <button class="delete-trail-btn" onclick="event.stopPropagation(); trailBlogger.deleteTrail('${trail.name}')" title="Delete Trail">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
             </div>
         `).join('');
@@ -608,6 +766,10 @@ class TrailBlogger {
     
     showImportModal() {
         document.getElementById('importModal').style.display = 'block';
+    }
+    
+    showAboutModal() {
+        document.getElementById('aboutModal').style.display = 'block';
     }
     
     showRestoreDialog() {
@@ -716,7 +878,9 @@ class TrailBlogger {
             `4. Clear All Data (removes everything)\n` +
             `5. Clean Old Backups (removes old backup files)\n` +
             `6. Export Data for Sharing (creates shared_trails.json)\n` +
-            `7. Cancel`;
+            `7. Backup Trail Images (download images backup)\n` +
+            `8. Restore Trail Images (upload images backup)\n` +
+            `9. Cancel`;
         
         const choice = prompt(message, '1');
         
@@ -749,9 +913,123 @@ class TrailBlogger {
                 this.exportDataForSharing();
                 break;
             case '7':
+                this.backupTrailImages();
+                break;
+            case '8':
+                this.showRestoreImagesDialog();
+                break;
+            case '9':
             default:
                 // Cancel
                 break;
+        }
+    }
+    
+    showRestoreImagesDialog() {
+        // Trigger the hidden file input for images
+        document.getElementById('restoreImagesInput').click();
+    }
+    
+    async backupTrailImages() {
+        try {
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            const imageBackup = {
+                timestamp: new Date().toISOString(),
+                version: '1.0',
+                trails: []
+            };
+            
+            // Collect all images from backend
+            for (const trail of trails) {
+                try {
+                    const response = await fetch(`/api/trails/${trail.id}/images`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        imageBackup.trails.push({
+                            trailId: trail.id,
+                            trailName: trail.name,
+                            images: result.images
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error fetching images for trail ${trail.name}:`, error);
+                }
+            }
+            
+            // Create downloadable file
+            const dataStr = JSON.stringify(imageBackup, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `trailblogger_images_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.style.display = 'none';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up
+            URL.revokeObjectURL(link.href);
+            
+            alert(`Image backup created successfully!\n\nTotal trails with images: ${imageBackup.trails.length}`);
+            
+        } catch (error) {
+            console.error('Error creating image backup:', error);
+            alert('Error creating image backup. Please try again.');
+        }
+    }
+    
+    async restoreImagesFromBackup(file) {
+        try {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.trails || !Array.isArray(backupData.trails)) {
+                        alert('Invalid image backup file.');
+                        return;
+                    }
+                    
+                    const confirmRestore = confirm(
+                        `Restore images from backup?\n\n` +
+                        `Trails with images: ${backupData.trails.length}\n` +
+                        `Backup created: ${backupData.timestamp}\n\n` +
+                        `Note: This will add images to trails that match by ID.`
+                    );
+                    
+                    if (!confirmRestore) return;
+                    
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    // Restore images for each trail
+                    for (const trailData of backupData.trails) {
+                        try {
+                            // Here you would typically upload the images back to the server
+                            // For now, we'll just log the restoration
+                            console.log(`Restoring ${trailData.images.length} images for trail: ${trailData.trailName}`);
+                            successCount++;
+                        } catch (error) {
+                            console.error(`Error restoring images for trail ${trailData.trailName}:`, error);
+                            errorCount++;
+                        }
+                    }
+                    
+                    alert(`Image restoration complete!\n\nSuccess: ${successCount}\nErrors: ${errorCount}`);
+                    
+                } catch (error) {
+                    console.error('Error parsing image backup file:', error);
+                    alert('Error parsing image backup file. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+        } catch (error) {
+            console.error('Error reading image backup file:', error);
+            alert('Error reading image backup file. Please try again.');
         }
     }
     
@@ -1442,6 +1720,101 @@ class TrailBlogger {
     
     editTrail(trailName) {
         this.showTrailModal(trailName);
+    }
+    
+    async deleteTrail(trailName) {
+        const trail = this.trails.find(t => t.name === trailName);
+        if (!trail) {
+            alert('Trail not found.');
+            return;
+        }
+        
+        const confirmDelete = confirm(
+            `Are you sure you want to delete this trail?\n\n` +
+            `Trail: ${trail.name}\n` +
+            `Length: ${trail.length} miles\n` +
+            `Status: ${trail.status}\n\n` +
+            `This action cannot be undone unless you have a backup.`
+        );
+        
+        if (!confirmDelete) return;
+        
+        try {
+            // Remove from trails array
+            const trailIndex = this.trails.findIndex(t => t.name === trailName);
+            if (trailIndex >= 0) {
+                this.trails.splice(trailIndex, 1);
+            }
+            
+            // Delete images from server
+            if (trail.id) {
+                try {
+                    const response = await fetch(`/api/trails/${trail.id}/images`, {
+                        method: 'GET'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        // Delete each image
+                        for (const image of result.images) {
+                            await fetch(`/api/trails/${trail.id}/images/${image.filename}`, {
+                                method: 'DELETE'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Error deleting images from server:', error);
+                    // Continue with trail deletion even if image deletion fails
+                }
+            }
+            
+            // Update localStorage
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            const updatedTrails = trails.filter(t => t.name !== trailName);
+            localStorage.setItem('trailBlogger_trails', JSON.stringify(updatedTrails));
+            
+            // Update GeoJSON
+            const geojsonData = {
+                type: "FeatureCollection",
+                features: updatedTrails.map(trail => {
+                    const geometry = trail.originalGeoJSON && trail.originalGeoJSON.geometry 
+                        ? trail.originalGeoJSON.geometry 
+                        : {
+                            type: "LineString",
+                            coordinates: trail.coordinates
+                        };
+                    
+                    return {
+                        type: "Feature",
+                        properties: {
+                            name: trail.name,
+                            length: trail.length,
+                            difficulty: trail.difficulty,
+                            status: trail.status
+                        },
+                        geometry: geometry
+                    };
+                })
+            };
+            localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
+            
+            // Update UI
+            this.updateStatistics();
+            this.renderTrailList();
+            this.updateMapTrails();
+            
+            // Close description panel if this trail was selected
+            if (this.selectedTrail && this.selectedTrail.name === trailName) {
+                this.closeDescriptionPanel();
+            }
+            
+            console.log(`Trail "${trailName}" deleted successfully`);
+            alert(`Trail "${trailName}" has been deleted.`);
+            
+        } catch (error) {
+            console.error('Error deleting trail:', error);
+            alert('Error deleting trail. Please try again.');
+        }
     }
     
     

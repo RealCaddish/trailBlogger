@@ -22,12 +22,12 @@ body {
 
 /* Header */
 .header {
-    background: #2c3e50; /* Charcoal background */
-    color: white;
+    background: #ffffff; /* Clean white background */
+    color: #333;
     padding: 1.5rem 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    border-bottom: 3px solid #34495e;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .header-content {
@@ -55,7 +55,7 @@ body {
 .header h1 {
     font-size: 1.8rem;
     font-weight: 600;
-    color: #ecf0f1;
+    color: #2c5530;
 }
 
 @keyframes pulse {
@@ -105,6 +105,18 @@ body {
 .btn-secondary:hover {
     background-color: #5a6268;
     transform: translateY(-1px);
+}
+
+.btn-about {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.btn-about:hover {
+    background: linear-gradient(135deg, #138496 0%, #17a2b8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
 }
 
 /* Main Content */
@@ -849,4 +861,73 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* About Modal Styles */
+.about-modal-content {
+    max-width: 700px;
+}
+
+.about-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.about-section:last-of-type {
+    border-bottom: none;
+}
+
+.about-section h3 {
+    color: #2c5530;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.about-section p {
+    color: #495057;
+    line-height: 1.7;
+    margin-bottom: 0.5rem;
+}
+
+.about-list {
+    margin-left: 1.5rem;
+    color: #495057;
+    line-height: 1.5;
+}
+
+.about-list li {
+    margin-bottom: 0.5rem;
+}
+
+.about-list strong {
+    color: #2c5530;
+}
+
+code {
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #d63384;
+}
+
+/* Delete Trail Button */
+.delete-trail-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    margin-left: 0.5rem;
+}
+
+.delete-trail-btn:hover {
+    background-color: #ffe6e6;
+    color: #c82333;
+    transform: scale(1.1);
 }

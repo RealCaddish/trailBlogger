@@ -94,3 +94,4 @@ trailBlogger/
 - Use environment variables for production settings
 - Railway provides persistent storage for images
 - Your public site will have the same functionality as local development
+

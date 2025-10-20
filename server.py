@@ -188,9 +188,17 @@ def import_data():
         logger.error(f"Error importing data: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/trails/<trail_id>/images', methods=['POST'])
+@app.route('/api/trails/<trail_id>/images', methods=['POST', 'OPTIONS'])
 def upload_trail_images(trail_id):
     """Upload images for a specific trail"""
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "ok"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response, 200
+    
     try:
         if 'images' not in request.files:
             return jsonify({"error": "No images provided"}), 400
