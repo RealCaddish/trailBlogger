@@ -24,27 +24,27 @@ A web-based application for tracking and documenting your hiking adventures. Cre
 3. **Open your browser**
    Navigate to `http://localhost:5000`
 
-## Data Privacy & Security
+## Sharing Your Adventures
 
-### Your Data Stays Local
-- **All trail data, images, and journal entries are stored locally on your machine**
-- **No data is sent to external servers or shared with others**
-- **Your personal information remains completely private**
+### How This Works
+- **Trail data and images are stored in the repository**
+- **When you push to GitHub, your trails and photos become publicly visible**
+- **Others can view your hiking adventures by visiting your repository**
+- **Fork the repo to create your own separate trail collection**
 
-### What's Included vs. What's Private
+### What's Shared
 
-#### **Public Repository (Safe to Share)**
+#### **Public Repository (Shared)**
 - Application code and functionality
-- UI/UX components
-- Map integration
-- Sample data structure (no personal content)
-
-#### **Private Data (Never Shared)**
 - Your trail coordinates and routes
-- Personal photos and images
-- Journal entries and descriptions
-- Trail statistics and progress
-- Backup files
+- Your hiking photos and images
+- Journal entries and trail descriptions
+- Trail statistics and hiking history
+
+#### **Private (Not Shared)**
+- Backup files you create locally
+- Draft trails before you commit them
+- Browser localStorage (temporary data)
 
 ### Data Storage Structure
 ```
@@ -54,10 +54,11 @@ trail-blogger/
 ├── styles.css            # Styling
 ├── server.py             # Local server
 ├── data_manager.py       # Data handling
-├── data/                 # YOUR PRIVATE DATA (not in repo)
-│   ├── trails.geojson    # Your trail data
-│   ├── images/           # Your photos
-│   └── backup_*/         # Your backups
+├── data/                 # YOUR TRAIL DATA (shared in repo)
+│   ├── trails.geojson    # Your trail routes
+│   ├── trail_images/     # Your hiking photos
+│   ├── states.geojson    # Geographic data
+│   └── parks_simplified.json  # Park boundaries
 └── logo/                 # Application branding
 ```
 

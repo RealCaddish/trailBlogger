@@ -56,6 +56,14 @@ body {
     font-size: 1.8rem;
     font-weight: 600;
     color: #2c5530;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.2s ease;
+    user-select: none;
+}
+
+.header h1:hover {
+    color: #3d7540;
+    transform: scale(1.02);
 }
 
 @keyframes pulse {
@@ -305,6 +313,89 @@ body {
     box-shadow: 0 0 0 2px rgba(74, 124, 89, 0.2);
 }
 
+/* Searchable Input Styles */
+.form-input.searchable {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background-color: white;
+    transition: border-color 0.3s ease;
+}
+
+.form-input.searchable:hover:not(:disabled) {
+    border-color: #5a8f5a;
+}
+
+.form-input.searchable:focus {
+    outline: none;
+    border-color: #4a7c59;
+    box-shadow: 0 0 0 2px rgba(74, 124, 89, 0.2);
+}
+
+.form-input.searchable:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    color: #999;
+}
+
+/* Autocomplete Dropdown */
+.form-group {
+    position: relative; /* Make parent relative for absolute positioning */
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    width: 100%;
+    max-height: 250px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+    margin-top: -6px;
+}
+
+.autocomplete-dropdown.show {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background-color: #f5f5f5;
+}
+
+.autocomplete-item.selected {
+    background-color: #e8f5e9;
+    color: #2c5530;
+    font-weight: 500;
+}
+
+.autocomplete-item.highlighted {
+    background-color: #e8f5e9;
+}
+
+.autocomplete-no-results {
+    padding: 0.75rem;
+    color: #999;
+    text-align: center;
+    font-style: italic;
+}
+
 /* Trail Filters */
 .trail-filters {
     display: flex;
@@ -371,24 +462,24 @@ body {
     font-weight: 600;
 }
 
-/* Selected hiked trail - blue */
+/* Selected hiked trail - blue border, black text */
 .trail-item.hiked.selected {
     border-left: 4px solid #007cbf;
     background-color: #e6f3ff;
 }
 
 .trail-item.hiked.selected .trail-name {
-    color: #007cbf;
+    color: #333; /* Keep text black even when selected */
 }
 
-/* Selected unhiked trail - purple */
+/* Selected unhiked trail - yellow border, black text */
 .trail-item.unhiked.selected {
-    border-left: 4px solid #6f42c1;
-    background-color: #f3e8ff;
+    border-left: 4px solid #ffc107;
+    background-color: #fffdf5;
 }
 
 .trail-item.unhiked.selected .trail-name {
-    color: #6f42c1;
+    color: #333; /* Keep text black even when selected */
 }
 
 .trail-item {
@@ -426,6 +517,7 @@ body {
 .trail-name {
     font-weight: 600;
     margin-bottom: 0.25rem;
+    color: #333; /* Dark gray/black for all trail names */
 }
 
 .trail-info {

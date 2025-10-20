@@ -298,12 +298,13 @@ class TrailBlogger {
     }
     
     populateParkDropdown() {
-        const parkSelect = document.getElementById('parkSelect');
+        const parkSearch = document.getElementById('parkSearch');
         const trailParkSelect = document.getElementById('trailPark');
         const importTrailParkSelect = document.getElementById('importTrailPark');
         
-        const dropdowns = [parkSelect, trailParkSelect, importTrailParkSelect];
-        const selectedState = document.getElementById('stateSelect').value;
+        const dropdowns = [trailParkSelect, importTrailParkSelect];
+        const stateSearch = document.getElementById('stateSearch');
+        const selectedState = stateSearch ? stateSearch.value : '';
         
         console.log('Populating park dropdown...');
         console.log('Selected state:', selectedState);
@@ -419,17 +420,45 @@ class TrailBlogger {
     }
     
     setupEventListeners() {
-        // State selection
-        document.getElementById('stateSelect').addEventListener('change', (e) => {
-            console.log('State selection changed to:', e.target.value);
-            this.currentState = e.target.value;
-            this.changeState();
+        // Home button
+        document.getElementById('homeBtn').addEventListener('click', () => this.resetToWorldView());
+        
+        // Searchable state input
+        const stateSearch = document.getElementById('stateSearch');
+        const stateDropdown = document.getElementById('stateDropdown');
+        
+        stateSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            this.showAutocomplete('state', query, stateDropdown);
         });
         
-        // Park selection
-        document.getElementById('parkSelect').addEventListener('change', (e) => {
-            this.currentPark = e.target.value;
-            this.changePark();
+        stateSearch.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            this.showAutocomplete('state', query, stateDropdown);
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#stateSearch') && !e.target.closest('#stateDropdown')) {
+                stateDropdown.classList.remove('show');
+            }
+            if (!e.target.closest('#parkSearch') && !e.target.closest('#parkDropdown')) {
+                document.getElementById('parkDropdown').classList.remove('show');
+            }
+        });
+        
+        // Searchable park input
+        const parkSearch = document.getElementById('parkSearch');
+        const parkDropdown = document.getElementById('parkDropdown');
+        
+        parkSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            this.showAutocomplete('park', query, parkDropdown);
+        });
+        
+        parkSearch.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            this.showAutocomplete('park', query, parkDropdown);
         });
         
         // Trail filters
@@ -571,7 +600,8 @@ class TrailBlogger {
     }
     
     changePark() {
-        const selectedParkName = document.getElementById('parkSelect').value;
+        const parkSearch = document.getElementById('parkSearch');
+        const selectedParkName = parkSearch ? parkSearch.value : '';
         
         // Clear existing layers
         if (this.currentParkLayer) {
@@ -624,6 +654,129 @@ class TrailBlogger {
             
             // Store reference to current park layer
             this.currentParkLayer = selectedParkLayer;
+        }
+    }
+    
+    resetToWorldView() {
+        console.log('Resetting to worldwide view...');
+        
+        // Clear search inputs
+        const stateSearch = document.getElementById('stateSearch');
+        const parkSearch = document.getElementById('parkSearch');
+        if (stateSearch) stateSearch.value = '';
+        if (parkSearch) {
+            parkSearch.value = '';
+            parkSearch.disabled = true;
+        }
+        
+        // Hide dropdowns
+        document.getElementById('stateDropdown').classList.remove('show');
+        document.getElementById('parkDropdown').classList.remove('show');
+        
+        // Clear current selections
+        this.currentState = '';
+        this.currentPark = '';
+        
+        // Remove any state/park layers
+        if (this.currentParkLayer) {
+            this.map.removeLayer(this.currentParkLayer);
+            this.currentParkLayer = null;
+        }
+        
+        if (this.currentStateLayer) {
+            this.map.removeLayer(this.currentStateLayer);
+            this.currentStateLayer = null;
+        }
+        
+        // Reset map view to worldwide (centered on US)
+        this.map.flyTo([39.8283, -98.5795], 4, {
+            duration: 1.5
+        });
+        
+        console.log('✅ Reset to worldwide view complete');
+    }
+    
+    showAutocomplete(type, query, dropdownEl) {
+        dropdownEl.innerHTML = '';
+        
+        let items = [];
+        
+        if (type === 'state') {
+            // Get all states
+            if (this.statesData && this.statesData.features) {
+                items = this.statesData.features
+                    .map(f => f.properties.name)
+                    .filter(name => name.toLowerCase().includes(query.toLowerCase()))
+                    .sort();
+            }
+        } else if (type === 'park') {
+            // Get parks for selected state
+            const stateSearch = document.getElementById('stateSearch');
+            const selectedState = stateSearch ? stateSearch.value : '';
+            
+            if (!selectedState) {
+                // No state selected
+                dropdownEl.innerHTML = '<div class="autocomplete-no-results">Please select a state first</div>';
+                dropdownEl.classList.add('show');
+                return;
+            }
+            
+            if (this.parksData && this.parksData.features) {
+                items = this.parksData.features
+                    .filter(f => f.properties.state === selectedState)
+                    .map(f => f.properties.NAME)
+                    .filter(name => name && name.toLowerCase().includes(query.toLowerCase()))
+                    .sort();
+            }
+        }
+        
+        // Show results
+        if (items.length === 0) {
+            dropdownEl.innerHTML = '<div class="autocomplete-no-results">No results found</div>';
+        } else {
+            items.slice(0, 50).forEach(item => { // Limit to 50 results
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.textContent = item;
+                div.addEventListener('click', () => {
+                    this.selectAutocompleteItem(type, item);
+                });
+                dropdownEl.appendChild(div);
+            });
+        }
+        
+        dropdownEl.classList.add('show');
+    }
+    
+    selectAutocompleteItem(type, value) {
+        if (type === 'state') {
+            const stateSearch = document.getElementById('stateSearch');
+            const parkSearch = document.getElementById('parkSearch');
+            
+            stateSearch.value = value;
+            this.currentState = value;
+            
+            // Enable park search
+            parkSearch.disabled = false;
+            parkSearch.value = '';
+            
+            // Hide state dropdown
+            document.getElementById('stateDropdown').classList.remove('show');
+            
+            // Update state view
+            this.changeState();
+            
+        } else if (type === 'park') {
+            const parkSearch = document.getElementById('parkSearch');
+            
+            parkSearch.value = value;
+            this.currentPark = value;
+            
+            // Hide park dropdown
+            document.getElementById('parkDropdown').classList.remove('show');
+            
+            // Update park view
+            this.changePark();
         }
     }
     

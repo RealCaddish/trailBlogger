@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css?v=20241220d">
+    <link rel="stylesheet" href="styles.css?v=20241221">
     
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,7 +24,7 @@
             <div class="header-content">
                 <div class="logo-container">
                     <img src="logo/trailbloggerlibrary.png" alt="Trail Blogger" class="logo">
-                    <h1>Trail Blogger</h1>
+                    <h1 id="homeBtn" title="Return to worldwide view">Trail Blogger</h1>
                 </div>
                 <div class="header-controls">
                     <button id="aboutBtn" class="btn btn-about" title="About Trail Blogger">
@@ -47,16 +47,20 @@
                 <div class="sidebar-section">
                     <h3>Location Selection</h3>
                     <div class="form-group">
-                        <label for="stateSelect">State:</label>
-                        <select id="stateSelect" class="form-select">
-                            <option value="">Select a State</option>
-                        </select>
+                        <label for="stateSearch">State:</label>
+                        <input type="text" id="stateSearch" class="form-input searchable" placeholder="Type to search states..." autocomplete="off">
+                        <datalist id="stateList">
+                            <!-- States will be populated here -->
+                        </datalist>
+                        <div id="stateDropdown" class="autocomplete-dropdown"></div>
                     </div>
                     <div class="form-group">
-                        <label for="parkSelect">Park:</label>
-                        <select id="parkSelect" class="form-select">
-                            <option value="">Select a Park</option>
-                        </select>
+                        <label for="parkSearch">Park:</label>
+                        <input type="text" id="parkSearch" class="form-input searchable" placeholder="Type to search parks..." autocomplete="off" disabled>
+                        <datalist id="parkList">
+                            <!-- Parks will be populated here -->
+                        </datalist>
+                        <div id="parkDropdown" class="autocomplete-dropdown"></div>
                     </div>
                 </div>
 
@@ -264,30 +268,29 @@
                 </div>
                 <div class="modal-body">
                     <div class="about-section">
-                     
-                        <p>This is a personal project I created to document my hiking experiences. I wanted a place where I could keep track of the trails I explore, upload photos from my adventures, and write down my thoughts while they're still fresh.</p>
-                        <p>It's become my go-to space for preserving those moments on the trail—what I saw, how I felt, and the details I don't want to forget. If you hike too, I hope this helps you capture and remember your own journeys.</p>
+                        <p>This is a personal project I created to document and share my hiking experiences. I wanted a place where I could keep track of the trails I explore, upload photos from my adventures, and write down my thoughts while they're still fresh.</p>
+                        <p>It's become my go-to space for preserving those moments on the trail—what I saw, how I felt, and the details I don't want to forget. Feel free to explore the trails I've hiked and see the photos from my adventures!</p>
                     </div>
                     
                     <div class="about-section">
                         <h3>How to Use It</h3>
                         <ul class="about-list">
-                            <li>Click <strong>Add Trail</strong> to import a GeoJSON trail file</li>
-                            <li>Add photos and write about your hike</li>
-                            <li>Track which trails you've completed</li>
-                            <li>Use the <strong>Data</strong> button to backup your journal</li>
+                            <li>Browse my trails and photos from the map and trail list</li>
+                            <li>Click any trail to see details, images, and my hiking notes</li>
+                            <li>Fork the repository to create your own trail journal</li>
+                            <li>Add your own trails and photos, then push to share them</li>
                         </ul>
                     </div>
                     
                     <div class="about-section">
-                        <h3>Setup (One-Time)</h3>
-                        <p>To get photos working, you need to run the Python backend:</p>
+                        <h3>Running Your Own Instance</h3>
+                        <p>To set up your own trail journal:</p>
                         <ol class="about-list">
-                            <li>Open terminal in the project folder</li>
+                            <li>Fork or clone this repository</li>
                             <li>Run: <code>python server.py</code></li>
                             <li>Open: <code>http://localhost:5000</code></li>
+                            <li>Add your trails and push changes to share them</li>
                         </ol>
-                        <p>That's it! Everything stays on your computer.</p>
                     </div>
                 </div>
             </div>
@@ -302,6 +305,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Custom JS -->
-            <script src="app.js?v=20241220c"></script>
+    <script src="app.js?v=20241221"></script>
 </body>
 </html>

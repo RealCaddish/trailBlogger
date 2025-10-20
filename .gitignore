@@ -159,29 +159,14 @@ images/
 *.sqlite3
 
 # Trail Blogger specific data directories
-# Include specific data files, ignore the rest
-data/*
-!data/states.geojson
-!data/parks_simplified.json
-!data/trails.geojson
-!data/shared_trails.json
-!data/parks.geojson
-!data/images/
-!data/images/.gitkeep
-!data/trail_images/
-!data/trail_images/README.md
-!data/README.md
+# Trail images and data ARE NOW SHARED - only ignore backups
+data/backups/
 data/backup_*/
-data/user_data/
-data/user_images/
 data/user_backups/
 
-# User uploaded content
-uploads/
-user_uploads/
-trail_images/
-journal_entries/
-user_photos/
+# Temporary uploads directory (before processing)
+uploads/temp/
+user_uploads/temp/
 
 # Local configuration and personal settings
 config.local.js
@@ -189,11 +174,10 @@ settings.local.json
 user_preferences.json
 personal_data.json
 
-# Backup files created by the application
+# Backup files created by the application (keep these private)
 *.backup
 backup_*.json
-trailblogger_backup_*.json
-user_backup_*.json
+*_backup_*.json
 
 # Temporary files
 temp/
