@@ -11,6 +11,7 @@ class TrailBlogger {
         this.parksLayer = null; // Will store the parks GeoJSON layer
         this.statesData = null; // Will store the states from states.geojson
         this.currentState = null; // Currently selected state
+        this.imagesToDelete = []; // Track images marked for deletion
         
         // Park boundaries and center coordinates
         this.parks = {
@@ -1190,6 +1191,8 @@ class TrailBlogger {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.style.display = 'none';
         });
+        // Clear the images to delete array when closing modal
+        this.imagesToDelete = [];
     }
     
     populateTrailForm(trail) {
@@ -1229,13 +1232,16 @@ class TrailBlogger {
         // Clear the file input to prevent confusion
         document.getElementById('trailImages').value = '';
         
+        // Clear the images to delete array when opening the form
+        this.imagesToDelete = [];
+        
         // Show existing images with remove buttons
         const imagePreview = document.getElementById('imagePreview');
         if (trail.images && trail.images.length > 0) {
             imagePreview.innerHTML = trail.images.map((img, index) => `
-                <div class="image-preview-item">
+                <div class="image-preview-item" data-existing-image="${img}">
                     <img src="${img}" alt="Trail image" />
-                    <button type="button" class="remove-image-btn" onclick="trailBlogger.removeImage(${index})" title="Remove image">
+                    <button type="button" class="remove-image-btn" onclick="trailBlogger.removeImage(${index}, true)" title="Remove image">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -1283,6 +1289,28 @@ class TrailBlogger {
                 alert('Failed to upload images. Please try again.');
                 return;
             }
+        }
+        
+        // Delete marked images from server
+        if (this.imagesToDelete.length > 0 && existingTrailIndex >= 0) {
+            console.log(`Deleting ${this.imagesToDelete.length} marked images...`);
+            for (const imageUrl of this.imagesToDelete) {
+                try {
+                    // Extract filename from URL
+                    const filename = imageUrl.split('/').pop();
+                    const deleteUrl = `/api/trails/${trailId}/images/${filename}`;
+                    const deleteResponse = await fetch(deleteUrl, { method: 'DELETE' });
+                    if (deleteResponse.ok) {
+                        console.log(`Deleted image: ${filename}`);
+                    } else {
+                        console.error(`Failed to delete image: ${filename}`);
+                    }
+                } catch (error) {
+                    console.error('Error deleting image:', error);
+                }
+            }
+            // Clear the deletion list after processing
+            this.imagesToDelete = [];
         }
         
         // Get existing images from backend
@@ -1524,10 +1552,18 @@ class TrailBlogger {
     
 
     
-    removeImage(index) {
+    removeImage(index, isExisting = false) {
         // Remove the image from the preview
         const imageItems = document.querySelectorAll('.image-preview-item');
         if (imageItems[index]) {
+            // If it's an existing image, track it for deletion
+            if (isExisting) {
+                const imageUrl = imageItems[index].getAttribute('data-existing-image');
+                if (imageUrl && !this.imagesToDelete.includes(imageUrl)) {
+                    this.imagesToDelete.push(imageUrl);
+                    console.log('Marked image for deletion:', imageUrl);
+                }
+            }
             imageItems[index].remove();
         }
     }
@@ -2013,35 +2049,6 @@ class TrailBlogger {
             console.error('Error loading images:', error);
             imageGallery.innerHTML = '<p>Error loading images.</p>';
         }
-        
-        // Update stats
-        const statsGrid = document.getElementById('statsGrid');
-        statsGrid.innerHTML = `
-            <div class="stat-item-detail">
-                <span class="stat-label-detail">Length:</span>
-                <span class="stat-value-detail">${trail.length} miles</span>
-            </div>
-            <div class="stat-item-detail">
-                <span class="stat-label-detail">Difficulty:</span>
-                <span class="stat-value-detail">${trail.difficulty}</span>
-            </div>
-            <div class="stat-item-detail">
-                <span class="stat-label-detail">Status:</span>
-                <span class="stat-value-detail">${trail.status}</span>
-            </div>
-            ${trail.park ? `
-            <div class="stat-item-detail">
-                <span class="stat-label-detail">Park:</span>
-                <span class="stat-value-detail">${trail.park}</span>
-            </div>
-            ` : ''}
-            ${trail.dateHiked ? `
-            <div class="stat-item-detail">
-                <span class="stat-label-detail">Date Hiked:</span>
-                <span class="stat-value-detail">${new Date(trail.dateHiked).toLocaleDateString()}</span>
-            </div>
-            ` : ''}
-        `;
         
         // Show description panel
         document.getElementById('descriptionPanel').classList.add('active');
