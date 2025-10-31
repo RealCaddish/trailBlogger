@@ -2455,7 +2455,11 @@ class TrailBlogger {
                         console.log(`Loaded ${this.trails.length} trails from GeoJSON (GitHub Pages mode):`, this.trails.map(t => t.name));
                         
                         // Update the trail overlay on the map with the loaded trails
-                        this.updateTrailOverlay(geojsonData);
+                        this.updateMapTrails();
+                        
+                        // Update trail list and statistics
+                        this.updateTrailList();
+                        this.updateStatistics();
                         
                         return true;
                     }
