@@ -163,6 +163,7 @@ images/
 data/backups/
 data/backup_*/
 data/user_backups/
+backups/
 
 # Temporary uploads directory (before processing)
 uploads/temp/
