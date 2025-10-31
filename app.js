@@ -414,6 +414,40 @@ class TrailBlogger {
         console.log('Empty trail overlay initialized - ready for imported trails');
     }
     
+    convertGeoJSONToTrails(geojsonData) {
+        // Convert GeoJSON features to internal trail format
+        if (!geojsonData || !geojsonData.features) {
+            console.warn('Invalid GeoJSON data');
+            return [];
+        }
+        
+        return geojsonData.features
+            .map(feature => {
+                const props = feature.properties || {};
+                const geometry = feature.geometry || {};
+                
+                // Skip empty trails
+                if (!props.name) {
+                    return null;
+                }
+                
+                return {
+                    id: props.trail_id || props.id || Date.now(),
+                    name: props.name || '',
+                    park: props.park || '',
+                    length: parseFloat(props.length) || 0,
+                    difficulty: props.difficulty || 'moderate',
+                    status: props.status || 'unhiked',
+                    dateHiked: props.date_hiked || props.dateHiked || null,
+                    description: props.blog_post || props.description || '',
+                    images: props.images || [],
+                    coordinates: geometry.coordinates || [],
+                    geometryType: geometry.type || 'LineString'
+                };
+            })
+            .filter(trail => trail !== null); // Remove null entries
+    }
+    
     loadSampleData() {
         // Start with empty trail data - no placeholder trails
         this.trails = [];
@@ -2097,23 +2131,37 @@ class TrailBlogger {
             description.innerHTML = '<p>No description available for this trail.</p>';
         }
         
-        // Load images from backend
+        // Load images from backend or static files
         const imageGallery = document.getElementById('imageGallery');
         imageGallery.innerHTML = '<p>Loading images...</p>';
         
         try {
-            const response = await fetch(`/api/trails/${trail.id}/images`);
-            if (response.ok) {
-                const result = await response.json();
-                if (result.images && result.images.length > 0) {
-                    imageGallery.innerHTML = result.images.map(img => 
-                        `<img src="${img.url}" alt="Trail photo" onclick="trailBlogger.openImageModal('${img.url}')" />`
-                    ).join('');
+            // On GitHub Pages, use trail.images array directly with static paths
+            if (window.TrailBloggerConfig && window.TrailBloggerConfig.isGitHubPages) {
+                if (trail.images && trail.images.length > 0) {
+                    const imageBaseUrl = window.TrailBloggerConfig.imageBaseUrl;
+                    imageGallery.innerHTML = trail.images.map(imgFilename => {
+                        const imgUrl = `${imageBaseUrl}/${trail.id}/${imgFilename}`;
+                        return `<img src="${imgUrl}" alt="Trail photo" onclick="trailBlogger.openImageModal('${imgUrl}')" />`;
+                    }).join('');
                 } else {
                     imageGallery.innerHTML = '<p>No photos available for this trail.</p>';
                 }
             } else {
-                imageGallery.innerHTML = '<p>Error loading images.</p>';
+                // Local mode: fetch from Flask API
+                const response = await fetch(`/api/trails/${trail.id}/images`);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.images && result.images.length > 0) {
+                        imageGallery.innerHTML = result.images.map(img => 
+                            `<img src="${img.url}" alt="Trail photo" onclick="trailBlogger.openImageModal('${img.url}')" />`
+                        ).join('');
+                    } else {
+                        imageGallery.innerHTML = '<p>No photos available for this trail.</p>';
+                    }
+                } else {
+                    imageGallery.innerHTML = '<p>Error loading images.</p>';
+                }
             }
         } catch (error) {
             console.error('Error loading images:', error);
@@ -2392,7 +2440,25 @@ class TrailBlogger {
     
     async loadTrailsFromFile() {
         try {
-            // First, try to load from localStorage
+            // On GitHub Pages, load from trails.geojson directly (skip localStorage)
+            if (window.TrailBloggerConfig && window.TrailBloggerConfig.isGitHubPages) {
+                try {
+                    const response = await fetch(window.TrailBloggerConfig.trailsDataUrl);
+                    if (response.ok) {
+                        const geojsonData = await response.json();
+                        // Convert GeoJSON features to trail format
+                        this.trails = this.convertGeoJSONToTrails(geojsonData);
+                        console.log(`Loaded ${this.trails.length} trails from GeoJSON (GitHub Pages mode):`, this.trails.map(t => t.name));
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Error loading trails.geojson on GitHub Pages:', error);
+                    this.trails = [];
+                    return false;
+                }
+            }
+            
+            // Local mode: First, try to load from localStorage
             const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
             
             // If no local trails, load shared trails
