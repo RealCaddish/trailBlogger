@@ -2458,7 +2458,7 @@ class TrailBlogger {
                         this.updateMapTrails();
                         
                         // Update trail list and statistics
-                        this.updateTrailList();
+                        this.renderTrailList();
                         this.updateStatistics();
                         
                         return true;
