@@ -12,7 +12,7 @@ from data_manager import TrailDataManager
 import logging
 from werkzeug.utils import secure_filename
 import uuid
-from PIL import Image
+from PIL import Image, ImageOps
 import io
 
 # Set up logging
@@ -42,6 +42,9 @@ def compress_image(image_path, max_width=1200, quality=85):
     """Compress image to reduce file size"""
     try:
         with Image.open(image_path) as img:
+            # Apply EXIF orientation to fix sideways images
+            img = ImageOps.exif_transpose(img)
+            
             # Convert to RGB if necessary (for JPEG)
             if img.mode in ('RGBA', 'LA', 'P'):
                 img = img.convert('RGB')

@@ -22,7 +22,7 @@ class TrailBlogger {
                     [37.7833, -83.6667], // Southwest
                     [37.8833, -83.5667]  // Northeast
                 ],
-                zoom: 12
+                zoom: 4  // Zoomed out to show larger geographic area including Iceland
             }
         };
         
@@ -837,8 +837,8 @@ class TrailBlogger {
         }
         
         trailList.innerHTML = filteredTrails.map(trail => `
-            <div class="trail-item ${trail.status} ${this.selectedTrail && this.selectedTrail.name === trail.name ? 'selected' : ''}" onclick="trailBlogger.selectTrail('${trail.name}')">
-                <div class="trail-name">${trail.name}</div>
+            <div class="trail-item ${trail.status} ${this.selectedTrail && this.selectedTrail.name === trail.name ? 'selected' : ''}" data-trail-name="${this.escapeHtml(trail.name)}">
+                <div class="trail-name">${trail.name || '(Unnamed Trail)'}</div>
                 <div class="trail-info">
                     <span class="trail-length">${trail.length} miles</span> • 
                     <span>${trail.difficulty}</span> • 
@@ -847,15 +847,53 @@ class TrailBlogger {
                     ${trail.dateHiked ? ` • <span>${new Date(trail.dateHiked).toLocaleDateString()}</span>` : ''}
                 </div>
                 <div class="trail-actions">
-                    <button class="edit-trail-btn" onclick="event.stopPropagation(); trailBlogger.editTrail('${trail.name}')" title="Edit Trail">
+                    <button class="edit-trail-btn" title="Edit Trail">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="delete-trail-btn" onclick="event.stopPropagation(); trailBlogger.deleteTrail('${trail.name}')" title="Delete Trail">
+                    <button class="delete-trail-btn" title="Delete Trail">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
         `).join('');
+        
+        // Add event listeners for all trail items and buttons
+        this.attachTrailActionListeners();
+    }
+    
+    attachTrailActionListeners() {
+        const trailList = document.getElementById('trailList');
+        
+        // Add click listeners for trail items
+        trailList.querySelectorAll('.trail-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Don't trigger if clicking on action buttons
+                if (!e.target.closest('.trail-actions')) {
+                    const trailName = item.getAttribute('data-trail-name');
+                    this.selectTrail(trailName);
+                }
+            });
+        });
+        
+        // Use event delegation for edit buttons
+        trailList.querySelectorAll('.edit-trail-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const trailItem = e.target.closest('.trail-item');
+                const trailName = trailItem.getAttribute('data-trail-name');
+                this.editTrail(trailName);
+            });
+        });
+        
+        // Use event delegation for delete buttons
+        trailList.querySelectorAll('.delete-trail-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const trailItem = e.target.closest('.trail-item');
+                const trailName = trailItem.getAttribute('data-trail-name');
+                this.deleteTrail(trailName);
+            });
+        });
     }
     
     updateStatistics() {
@@ -900,6 +938,8 @@ class TrailBlogger {
                 console.log('Found trail for editing:', trail);
                 console.log('Trail length:', trail.length, 'Type:', typeof trail.length);
                 title.textContent = `Edit Trail: ${trail.name}`;
+                // Track which trail is being edited
+                this.editingTrailId = trail.id;
                 // Small delay to ensure modal is fully displayed before populating
                 setTimeout(() => this.populateTrailForm(trail), 10);
             }
@@ -908,6 +948,8 @@ class TrailBlogger {
             console.log('Editing selected trail:', this.selectedTrail);
             console.log('Selected trail length:', this.selectedTrail.length, 'Type:', typeof this.selectedTrail.length);
             title.textContent = `Edit Trail: ${this.selectedTrail.name}`;
+            // Track which trail is being edited
+            this.editingTrailId = this.selectedTrail.id;
             // Small delay to ensure modal is fully displayed before populating
             setTimeout(() => this.populateTrailForm(this.selectedTrail), 10);
         } else {
@@ -915,6 +957,9 @@ class TrailBlogger {
             title.textContent = 'Add New Trail';
             form.reset();
             document.getElementById('imagePreview').innerHTML = '';
+            this.imagePreviewFiles = [];
+            this.imagesToDelete = [];
+            this.editingTrailId = null;
         }
     }
     
@@ -1191,8 +1236,9 @@ class TrailBlogger {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.style.display = 'none';
         });
-        // Clear the images to delete array when closing modal
+        // Clear the images to delete array and editing tracker when closing modal
         this.imagesToDelete = [];
+        this.editingTrailId = null;
     }
     
     populateTrailForm(trail) {
@@ -1232,8 +1278,9 @@ class TrailBlogger {
         // Clear the file input to prevent confusion
         document.getElementById('trailImages').value = '';
         
-        // Clear the images to delete array when opening the form
+        // Clear the images to delete array and preview files when opening the form
         this.imagesToDelete = [];
+        this.imagePreviewFiles = [];
         
         // Show existing images with remove buttons
         const imagePreview = document.getElementById('imagePreview');
@@ -1257,9 +1304,19 @@ class TrailBlogger {
         const formData = new FormData(document.getElementById('trailForm'));
         const trailName = formData.get('trailName');
         
-        // Check if this is an edit or new trail
-        const existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
-        const trailId = existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now();
+        // Check if this is an edit or new trail - use editingTrailId if available
+        let existingTrailIndex = -1;
+        let trailId;
+        
+        if (this.editingTrailId) {
+            // We're editing an existing trail - find it by ID
+            existingTrailIndex = this.trails.findIndex(t => t.id === this.editingTrailId);
+            trailId = this.editingTrailId;
+        } else {
+            // New trail - check if name already exists
+            existingTrailIndex = this.trails.findIndex(t => t.name === trailName);
+            trailId = existingTrailIndex >= 0 ? this.trails[existingTrailIndex].id : Date.now();
+        }
         
         // Upload images to backend first
         let imageUrls = [];
@@ -1362,14 +1419,15 @@ class TrailBlogger {
         this.renderTrailList();
         this.updateMapTrails();
         
-        // Update selected trail if it was the one being edited
-        if (this.selectedTrail && this.selectedTrail.name === trailName) {
+        // Update selected trail if it was the one being edited (check by ID, not name, in case name changed)
+        if (this.editingTrailId && this.selectedTrail && this.selectedTrail.id === this.editingTrailId) {
             this.selectedTrail = trailData;
             this.showTrailDescription(trailName);
         }
         
-        // Clear the image preview files
+        // Clear the image preview files and editing tracker
         this.imagePreviewFiles = [];
+        this.editingTrailId = null;
     }
     
     async getImageFiles() {
@@ -1886,6 +1944,18 @@ class TrailBlogger {
             default:
                 return [];
         }
+    }
+    
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    selectTrailByElement(element) {
+        const trailName = element.getAttribute('data-trail-name');
+        this.selectTrail(trailName);
     }
     
     selectTrail(trailName) {
