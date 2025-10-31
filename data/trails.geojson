@@ -4,16 +4,24 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "",
+        "name": "Trail 136230",
         "length": 0,
         "difficulty": "moderate",
-        "status": "unhiked",
+        "status": "hiked",
         "date_hiked": null,
         "blog_post": "",
-        "images": [],
-        "created_at": "2025-08-15T16:08:39.159196",
-        "updated_at": "2025-08-15T16:08:39.159203",
-        "trail_id": "1755288519.159205"
+        "images": [
+          "trail-1756842136230/LavaStream_d6cabb67.jpg",
+          "trail-1756842136230/Volcano_3_compressed_6b7cd598.jpg",
+          "trail-1756842136230/koomer1_5ee72b77.jpg",
+          "trail-1756842136230/koomer2_f9a08e13.jpg",
+          "trail-1756842136230/lava2_24803806.jpg",
+          "trail-1756842136230/lava3_b4f697c7.jpg",
+          "trail-1756842136230/volcano1_27b3bca1.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.066654",
+        "updated_at": "2025-10-31T11:28:10.066654",
+        "trail_id": "1756842136230"
       },
       "geometry": {
         "type": "LineString",
@@ -23,16 +31,22 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "",
+        "name": "Trail 284678",
         "length": 0,
         "difficulty": "moderate",
-        "status": "unhiked",
+        "status": "hiked",
         "date_hiked": null,
         "blog_post": "",
-        "images": [],
-        "created_at": "2025-08-15T16:09:12.904552",
-        "updated_at": "2025-08-15T16:09:12.904559",
-        "trail_id": "1755288552.904561"
+        "images": [
+          "trail-1756906284678/0915211333_HDR_d40d1889.jpg",
+          "trail-1756906284678/DSC_11002_e656ed0d.JPG",
+          "trail-1756906284678/DSC_11343_0b71a93e.JPG",
+          "trail-1756906284678/DSC_13052_1de6283c.JPG",
+          "trail-1756906284678/DSC_13602_acc0d532.JPG"
+        ],
+        "created_at": "2025-10-31T11:28:10.066654",
+        "updated_at": "2025-10-31T11:28:10.066654",
+        "trail_id": "1756906284678"
       },
       "geometry": {
         "type": "LineString",
@@ -42,16 +56,189 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "",
+        "name": "Trail 183600",
         "length": 0,
         "difficulty": "moderate",
-        "status": "unhiked",
+        "status": "hiked",
         "date_hiked": null,
         "blog_post": "",
-        "images": [],
-        "created_at": "2025-08-15T16:10:08.086962",
-        "updated_at": "2025-08-15T16:10:08.086975",
-        "trail_id": "1755288608.086978"
+        "images": [
+          "trail-1756907183600/10_2fb09cc4.JPG",
+          "trail-1756907183600/12_0bc967aa.JPG",
+          "trail-1756907183600/13_643c1c40.JPG",
+          "trail-1756907183600/14_a667dddf.JPG",
+          "trail-1756907183600/1_31ecf23c.JPG",
+          "trail-1756907183600/2_da5a0c1f.JPG",
+          "trail-1756907183600/4_5cfb7e2e.JPG",
+          "trail-1756907183600/7_79a4b81c.JPG",
+          "trail-1756907183600/8_77f90b9d.JPG"
+        ],
+        "created_at": "2025-10-31T11:28:10.066654",
+        "updated_at": "2025-10-31T11:28:10.066654",
+        "trail_id": "1756907183600"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 897087",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1760976897087/DSC_2979_compressed_ca788920.jpg",
+          "trail-1760976897087/DSC_2986_compressed_8bb2c3d0.jpg",
+          "trail-1760976897087/DSC_3006_compressed_0370fb82.jpg",
+          "trail-1760976897087/DSC_3038_compressed_f8808eea.jpg",
+          "trail-1760976897087/DSC_3272_compressed_9a140976.jpg",
+          "trail-1760976897087/DSC_3573_compressed_d93cf72f.jpg",
+          "trail-1760976897087/DSC_3720_compressed_28d6d928.jpg",
+          "trail-1760976897087/DSC_3843_compressed_ae5a09a5.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.066654",
+        "updated_at": "2025-10-31T11:28:10.066654",
+        "trail_id": "1760976897087"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 314799",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1761402314799/DSC_11002_a9b7dd33.JPG",
+          "trail-1761402314799/DSC_11343_0aa4fe9f.JPG",
+          "trail-1761402314799/DSC_13052_393d5777.JPG",
+          "trail-1761402314799/DSC_13602_5ae9a8d0.JPG",
+          "trail-1761402314799/DSC_13722_eb4cd713.JPG",
+          "trail-1761402314799/DSC_14503_a3219d97.JPG",
+          "trail-1761402314799/DSC_15482_fe2a83e7.JPG",
+          "trail-1761402314799/DSC_17632_8514a810.JPG"
+        ],
+        "created_at": "2025-10-31T11:28:10.067654",
+        "updated_at": "2025-10-31T11:28:10.067654",
+        "trail_id": "1761402314799"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 217429",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1761576217429/0914211639a_compressed_1_8977c4c1.jpg",
+          "trail-1761576217429/DSC_0627_compressed_2_45123e29.jpg",
+          "trail-1761576217429/DSC_07382_compressed_1_39579853.jpg",
+          "trail-1761576217429/DSC_0877_compressed_1_ccae280e.jpg",
+          "trail-1761576217429/DSC_0944_compressed_1_ecec6fc3.jpg",
+          "trail-1761576217429/DSC_0974_compressed_1_49964d9b.jpg",
+          "trail-1761576217429/DSC_1005_compressed_1_866dafc1.jpg",
+          "trail-1761576217429/DSC_1022_compressed_1_bf7732fe.jpg",
+          "trail-1761576217429/DSC_1026_compressed_1_685eade4.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.067654",
+        "updated_at": "2025-10-31T11:28:10.067654",
+        "trail_id": "1761576217429"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 899908",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1761587899908/1_compressed_0eaafcbd.jpg",
+          "trail-1761587899908/2_compressed_c51091c8.jpg",
+          "trail-1761587899908/3_compressed_06b093be.jpg",
+          "trail-1761587899908/4_compressed_b92676f0.jpg",
+          "trail-1761587899908/5_compressed_391107f0.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.067654",
+        "updated_at": "2025-10-31T11:28:10.067654",
+        "trail_id": "1761587899908"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 613592",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1761919613592/PXL_20240421_164414246_compressed_22f4757e.jpg",
+          "trail-1761919613592/PXL_20240421_171630909_compressed_20383e3f.jpg",
+          "trail-1761919613592/PXL_20240421_175321047_compressed_23297437.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.067654",
+        "updated_at": "2025-10-31T11:28:10.067654",
+        "trail_id": "1761919613592"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trail 961072",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "hiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [
+          "trail-1761920961072/DSC_4157_compressed_de894f5a.jpg",
+          "trail-1761920961072/DSC_4252_compressed_f4bb63ee.jpg",
+          "trail-1761920961072/DSC_4331_compressed_9166af10.jpg",
+          "trail-1761920961072/DSC_4425_compressed_99d41166.jpg",
+          "trail-1761920961072/DSC_4607_compressed_7522b391.jpg",
+          "trail-1761920961072/PXL_20230305_183141836_compressed_4e7e6544.jpg",
+          "trail-1761920961072/PXL_20230306_010009860_compressed_86d78f02.jpg",
+          "trail-1761920961072/PXL_20230306_013538170_compressed_dd307992.jpg",
+          "trail-1761920961072/PXL_20230306_013756556_compressed_bea161c5.jpg",
+          "trail-1761920961072/PXL_20230306_0138569162_compressed_d1076ab4.jpg"
+        ],
+        "created_at": "2025-10-31T11:28:10.067654",
+        "updated_at": "2025-10-31T11:28:10.067654",
+        "trail_id": "1761920961072"
       },
       "geometry": {
         "type": "LineString",
