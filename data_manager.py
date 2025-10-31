@@ -190,7 +190,7 @@ class TrailDataManager:
     
     def export_trail_data(self, output_file: str = None) -> str:
         """
-        Export all trail data to a file
+        Export all trail data to a file with metadata
         
         Args:
             output_file: Output file path (optional)
@@ -203,21 +203,41 @@ class TrailDataManager:
             output_file = os.path.join(self.data_dir, f"trails_export_{timestamp}.geojson")
         
         try:
-            trails = self.load_all_trails()
+            geojson_data = self.load_all_trails()
+            trails = geojson_data.get('features', [])
+            
+            # Calculate metadata
+            total_images = sum(len(t['properties'].get('images', [])) for t in trails)
+            
+            # Create backup with metadata
+            backup_data = {
+                'timestamp': datetime.now().isoformat(),
+                'version': '2.0',
+                'metadata': {
+                    'totalTrails': len(trails),
+                    'hikedTrails': sum(1 for t in trails if t['properties'].get('status') == 'hiked'),
+                    'totalMiles': sum(t['properties'].get('length', 0) for t in trails),
+                    'totalImages': total_images,
+                    'backupCreated': datetime.now().isoformat()
+                },
+                'geojson': geojson_data
+            }
+            
             with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(trails, f, indent=2, ensure_ascii=False)
+                json.dump(backup_data, f, indent=2, ensure_ascii=False)
             logger.info(f"Exported trail data to: {output_file}")
             return output_file
         except Exception as e:
             logger.error(f"Error exporting trail data: {e}")
             raise
     
-    def import_trail_data(self, import_file: str) -> bool:
+    def import_trail_data(self, import_file: str, replace_all: bool = False) -> bool:
         """
         Import trail data from a file
         
         Args:
             import_file: Path to import file
+            replace_all: If True, replace all data. If False, merge with existing data
             
         Returns:
             bool: True if successful, False otherwise
@@ -226,31 +246,49 @@ class TrailDataManager:
             with open(import_file, 'r', encoding='utf-8') as f:
                 import_data = json.load(f)
             
-            # Validate GeoJSON structure
-            if import_data.get('type') != 'FeatureCollection':
-                logger.error("Invalid GeoJSON: must be FeatureCollection")
+            # Check if this is a backup format (v2.0) or plain GeoJSON
+            if 'geojson' in import_data and 'metadata' in import_data:
+                # New backup format
+                logger.info(f"Detected backup format v{import_data.get('version', '2.0')}")
+                logger.info(f"Backup created: {import_data.get('timestamp')}")
+                geojson_data = import_data['geojson']
+                metadata = import_data.get('metadata', {})
+                logger.info(f"Contains {metadata.get('totalTrails', 0)} trails, {metadata.get('totalImages', 0)} images")
+            elif import_data.get('type') == 'FeatureCollection':
+                # Plain GeoJSON format
+                logger.info("Detected plain GeoJSON format")
+                geojson_data = import_data
+            else:
+                logger.error("Invalid import file: must be GeoJSON FeatureCollection or Trail Blogger backup")
                 return False
             
-            # Merge with existing data
-            existing_trails = self.load_all_trails()
-            existing_names = {
-                trail['properties'].get('name') 
-                for trail in existing_trails.get('features', [])
-            }
-            
-            imported_count = 0
-            for feature in import_data.get('features', []):
-                trail_name = feature['properties'].get('name')
-                if trail_name and trail_name not in existing_names:
-                    if 'features' not in existing_trails:
-                        existing_trails['features'] = []
-                    existing_trails['features'].append(feature)
-                    imported_count += 1
-            
-            # Save merged data
-            self.save_geojson(existing_trails)
-            logger.info(f"Imported {imported_count} new trails from: {import_file}")
-            return True
+            if replace_all:
+                # Replace all data
+                logger.info("Replacing all trail data")
+                self.save_geojson(geojson_data)
+                logger.info(f"Replaced with {len(geojson_data.get('features', []))} trails")
+                return True
+            else:
+                # Merge with existing data
+                existing_trails = self.load_all_trails()
+                existing_names = {
+                    trail['properties'].get('name') 
+                    for trail in existing_trails.get('features', [])
+                }
+                
+                imported_count = 0
+                for feature in geojson_data.get('features', []):
+                    trail_name = feature['properties'].get('name')
+                    if trail_name and trail_name not in existing_names:
+                        if 'features' not in existing_trails:
+                            existing_trails['features'] = []
+                        existing_trails['features'].append(feature)
+                        imported_count += 1
+                
+                # Save merged data
+                self.save_geojson(existing_trails)
+                logger.info(f"Imported {imported_count} new trails from: {import_file}")
+                return True
             
         except Exception as e:
             logger.error(f"Error importing trail data: {e}")
