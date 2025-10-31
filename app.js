@@ -2141,7 +2141,11 @@ class TrailBlogger {
                 if (trail.images && trail.images.length > 0) {
                     const imageBaseUrl = window.TrailBloggerConfig.imageBaseUrl;
                     imageGallery.innerHTML = trail.images.map(imgFilename => {
-                        const imgUrl = `${imageBaseUrl}/${trail.id}/${imgFilename}`;
+                        // If imgFilename is already a full path, use it directly
+                        // Otherwise, construct path with trail- prefix
+                        const imgUrl = imgFilename.includes('/') 
+                            ? imgFilename 
+                            : `${imageBaseUrl}/trail-${trail.id}/${imgFilename}`;
                         return `<img src="${imgUrl}" alt="Trail photo" onclick="trailBlogger.openImageModal('${imgUrl}')" />`;
                     }).join('');
                 } else {
@@ -2449,6 +2453,10 @@ class TrailBlogger {
                         // Convert GeoJSON features to trail format
                         this.trails = this.convertGeoJSONToTrails(geojsonData);
                         console.log(`Loaded ${this.trails.length} trails from GeoJSON (GitHub Pages mode):`, this.trails.map(t => t.name));
+                        
+                        // Update the trail overlay on the map with the loaded trails
+                        this.updateTrailOverlay(geojsonData);
+                        
                         return true;
                     }
                 } catch (error) {
