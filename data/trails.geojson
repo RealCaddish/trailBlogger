@@ -38141,6 +38141,31 @@
           ]
         ]
       }
+    },
+    {
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
+      "properties": {
+        "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.066654",
+        "date_hiked": null,
+        "difficulty": "moderate",
+        "images": [
+          "0915211333_HDR_d40d1889.jpg",
+          "DSC_11002_e656ed0d.JPG",
+          "DSC_11343_0b71a93e.JPG",
+          "DSC_13052_1de6283c.JPG",
+          "DSC_13602_acc0d532.JPG"
+        ],
+        "length": 0,
+        "name": "Fagradsfjall Volcano ",
+        "status": "hiked",
+        "trail_id": "1756906284678",
+        "updated_at": "2025-10-31T16:33:17.203966"
+      },
+      "type": "Feature"
     }
   ]
 }
