@@ -2124,11 +2124,12 @@ class TrailBlogger {
         document.getElementById('trailStatus').textContent = trail.status;
         
         // Update description content
-        const description = document.getElementById('trailDescription');
-        if (trail.blogPost) {
-            description.innerHTML = `<p>${trail.blogPost}</p>`;
+        const descriptionElement = document.getElementById('trailDescription');
+        const descriptionText = trail.description || trail.blogPost || trail.blog_post || '';
+        if (descriptionText) {
+            descriptionElement.innerHTML = `<p>${descriptionText}</p>`;
         } else {
-            description.innerHTML = '<p>No description available for this trail.</p>';
+            descriptionElement.innerHTML = '<p>No description available for this trail.</p>';
         }
         
         // Load images from backend or static files
