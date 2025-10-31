@@ -2,14 +2,15 @@
   "type": "FeatureCollection",
   "features": [
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 136230",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.066654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1756842136230/LavaStream_d6cabb67.jpg",
           "trail-1756842136230/Volcano_3_compressed_6b7cd598.jpg",
@@ -19,24 +20,24 @@
           "trail-1756842136230/lava3_b4f697c7.jpg",
           "trail-1756842136230/volcano1_27b3bca1.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.066654",
-        "updated_at": "2025-10-31T11:28:10.066654",
-        "trail_id": "1756842136230"
+        "length": 0,
+        "name": "Trail 136230",
+        "status": "hiked",
+        "trail_id": "1756842136230",
+        "updated_at": "2025-10-31T11:28:10.066654"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 284678",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.066654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1756906284678/0915211333_HDR_d40d1889.jpg",
           "trail-1756906284678/DSC_11002_e656ed0d.JPG",
@@ -44,24 +45,24 @@
           "trail-1756906284678/DSC_13052_1de6283c.JPG",
           "trail-1756906284678/DSC_13602_acc0d532.JPG"
         ],
-        "created_at": "2025-10-31T11:28:10.066654",
-        "updated_at": "2025-10-31T11:28:10.066654",
-        "trail_id": "1756906284678"
+        "length": 0,
+        "name": "Fagradsfjall Volcano ",
+        "status": "hiked",
+        "trail_id": "1756906284678",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 183600",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.066654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1756907183600/10_2fb09cc4.JPG",
           "trail-1756907183600/12_0bc967aa.JPG",
@@ -73,24 +74,24 @@
           "trail-1756907183600/7_79a4b81c.JPG",
           "trail-1756907183600/8_77f90b9d.JPG"
         ],
-        "created_at": "2025-10-31T11:28:10.066654",
-        "updated_at": "2025-10-31T11:28:10.066654",
-        "trail_id": "1756907183600"
+        "length": 0,
+        "name": "Koomer Ridge",
+        "status": "hiked",
+        "trail_id": "1756907183600",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 897087",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.066654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1760976897087/DSC_2979_compressed_ca788920.jpg",
           "trail-1760976897087/DSC_2986_compressed_8bb2c3d0.jpg",
@@ -101,24 +102,24 @@
           "trail-1760976897087/DSC_3720_compressed_28d6d928.jpg",
           "trail-1760976897087/DSC_3843_compressed_ae5a09a5.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.066654",
-        "updated_at": "2025-10-31T11:28:10.066654",
-        "trail_id": "1760976897087"
+        "length": 0,
+        "name": "Beaver Creek Snowshoeing Loop",
+        "status": "hiked",
+        "trail_id": "1760976897087",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 314799",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.067654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1761402314799/DSC_11002_a9b7dd33.JPG",
           "trail-1761402314799/DSC_11343_0aa4fe9f.JPG",
@@ -129,24 +130,24 @@
           "trail-1761402314799/DSC_15482_fe2a83e7.JPG",
           "trail-1761402314799/DSC_17632_8514a810.JPG"
         ],
-        "created_at": "2025-10-31T11:28:10.067654",
-        "updated_at": "2025-10-31T11:28:10.067654",
-        "trail_id": "1761402314799"
+        "length": 0,
+        "name": "Trail 314799",
+        "status": "hiked",
+        "trail_id": "1761402314799",
+        "updated_at": "2025-10-31T11:28:10.067654"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 217429",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.067654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1761576217429/0914211639a_compressed_1_8977c4c1.jpg",
           "trail-1761576217429/DSC_0627_compressed_2_45123e29.jpg",
@@ -158,24 +159,24 @@
           "trail-1761576217429/DSC_1022_compressed_1_bf7732fe.jpg",
           "trail-1761576217429/DSC_1026_compressed_1_685eade4.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.067654",
-        "updated_at": "2025-10-31T11:28:10.067654",
-        "trail_id": "1761576217429"
+        "length": 0,
+        "name": "Graenidalur Loop",
+        "status": "hiked",
+        "trail_id": "1761576217429",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 899908",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.067654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1761587899908/1_compressed_0eaafcbd.jpg",
           "trail-1761587899908/2_compressed_c51091c8.jpg",
@@ -183,47 +184,47 @@
           "trail-1761587899908/4_compressed_b92676f0.jpg",
           "trail-1761587899908/5_compressed_391107f0.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.067654",
-        "updated_at": "2025-10-31T11:28:10.067654",
-        "trail_id": "1761587899908"
+        "length": 0,
+        "name": "MST: Soco Gap to Waterrock Knob",
+        "status": "hiked",
+        "trail_id": "1761587899908",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 613592",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.067654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1761919613592/PXL_20240421_164414246_compressed_22f4757e.jpg",
           "trail-1761919613592/PXL_20240421_171630909_compressed_20383e3f.jpg",
           "trail-1761919613592/PXL_20240421_175321047_compressed_23297437.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.067654",
-        "updated_at": "2025-10-31T11:28:10.067654",
-        "trail_id": "1761919613592"
+        "length": 0,
+        "name": "North Oak Creek Trail",
+        "status": "hiked",
+        "trail_id": "1761919613592",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     },
     {
-      "type": "Feature",
+      "geometry": {
+        "coordinates": [],
+        "type": "LineString"
+      },
       "properties": {
-        "name": "Trail 961072",
-        "length": 0,
-        "difficulty": "moderate",
-        "status": "hiked",
-        "date_hiked": null,
         "blog_post": "",
+        "created_at": "2025-10-31T11:28:10.067654",
+        "date_hiked": null,
+        "difficulty": "moderate",
         "images": [
           "trail-1761920961072/DSC_4157_compressed_de894f5a.jpg",
           "trail-1761920961072/DSC_4252_compressed_f4bb63ee.jpg",
@@ -236,14 +237,13 @@
           "trail-1761920961072/PXL_20230306_013756556_compressed_bea161c5.jpg",
           "trail-1761920961072/PXL_20230306_0138569162_compressed_d1076ab4.jpg"
         ],
-        "created_at": "2025-10-31T11:28:10.067654",
-        "updated_at": "2025-10-31T11:28:10.067654",
-        "trail_id": "1761920961072"
+        "length": 0,
+        "name": "Mineral Belt Loop Trail ",
+        "status": "hiked",
+        "trail_id": "1761920961072",
+        "updated_at": "2025-10-31T11:56:23.883335"
       },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": []
-      }
+      "type": "Feature"
     }
   ]
 }
