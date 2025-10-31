@@ -1,0 +1,62 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "unhiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [],
+        "created_at": "2025-08-15T16:08:39.159196",
+        "updated_at": "2025-08-15T16:08:39.159203",
+        "trail_id": "1755288519.159205"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "unhiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [],
+        "created_at": "2025-08-15T16:09:12.904552",
+        "updated_at": "2025-08-15T16:09:12.904559",
+        "trail_id": "1755288552.904561"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "",
+        "length": 0,
+        "difficulty": "moderate",
+        "status": "unhiked",
+        "date_hiked": null,
+        "blog_post": "",
+        "images": [],
+        "created_at": "2025-08-15T16:10:08.086962",
+        "updated_at": "2025-08-15T16:10:08.086975",
+        "trail_id": "1755288608.086978"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": []
+      }
+    }
+  ]
+}
