@@ -2462,6 +2462,10 @@ class TrailBlogger {
                         this.renderTrailList();
                         this.updateStatistics();
                         
+                        // Dispatch event for mobile interface
+                        window.dispatchEvent(new CustomEvent('trailsLoaded', { detail: { trails: this.trails } }));
+                        console.log('Dispatched trailsLoaded event');
+                        
                         return true;
                     }
                 } catch (error) {
@@ -2511,6 +2515,12 @@ class TrailBlogger {
             
             // Update the map with loaded trails
             this.updateMapTrails();
+            
+            // Dispatch event for mobile interface
+            if (this.trails.length > 0) {
+                window.dispatchEvent(new CustomEvent('trailsLoaded', { detail: { trails: this.trails } }));
+                console.log('Dispatched trailsLoaded event (localStorage)');
+            }
             
             return this.trails.length > 0;
         } catch (error) {
@@ -3029,4 +3039,7 @@ class TrailBlogger {
 let trailBlogger;
 document.addEventListener('DOMContentLoaded', () => {
     trailBlogger = new TrailBlogger();
+    // Expose to window for mobile interface
+    window.app = trailBlogger;
+    console.log('TrailBlogger initialized and exposed to window.app');
 });

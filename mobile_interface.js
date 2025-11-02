@@ -71,6 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('=== DOM Content Loaded ===');
     console.log('Starting mobile interface initialization...');
     initMobileInterface();
+    
+    // Also listen for trailsLoaded event as a fallback
+    window.addEventListener('trailsLoaded', (event) => {
+        console.log('=== trailsLoaded EVENT RECEIVED ===');
+        console.log('Trails from event:', event.detail.trails.length);
+        
+        // Only populate if mobile and not already populated
+        if (window.innerWidth <= 768 && window.app) {
+            populateMobileTrails();
+        }
+    });
 });
 
 function createFloatingActionButton() {
