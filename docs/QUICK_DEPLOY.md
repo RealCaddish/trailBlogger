@@ -1,6 +1,6 @@
 # Quick Deploy Reference Card
 
-## 🚀 Deploy Changes from localhost:5000 to GitHub Pages
+##  Deploy Changes from localhost:5000 to GitHub Pages
 
 ### The Simple Way (Automated)
 
@@ -9,11 +9,11 @@ python deploy.py
 ```
 
 That's it! The script will:
-- ✅ Check your data is valid
-- ✅ Show you what changed
-- ✅ Create a backup
-- ✅ Commit and push to GitHub
-- ✅ Give you the live URL
+-  Check your data is valid
+-  Show you what changed
+-  Create a backup
+-  Commit and push to GitHub
+-  Give you the live URL
 
 ---
 

@@ -5,14 +5,14 @@ This directory stores images for each trail. Images are organized by trail ID:
 ## Directory Structure:
 ```
 data/trail_images/
-├── trail_1/           # Images for trail with ID 1
-│   ├── image1.jpg
-│   ├── image2.jpg
-│   └── ...
-├── trail_2/           # Images for trail with ID 2
-│   ├── image1.jpg
-│   └── ...
-└── ...
+ trail_1/           # Images for trail with ID 1
+    image1.jpg
+    image2.jpg
+    ...
+ trail_2/           # Images for trail with ID 2
+    image1.jpg
+    ...
+ ...
 ```
 
 ## Image Naming Convention:

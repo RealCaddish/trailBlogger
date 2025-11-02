@@ -49,17 +49,17 @@ A web-based application for tracking and documenting your hiking adventures. Cre
 ### Data Storage Structure
 ```
 trail-blogger/
-├── app.js                 # Application logic
-├── index.html            # Main interface
-├── styles.css            # Styling
-├── server.py             # Local server
-├── data_manager.py       # Data handling
-├── data/                 # YOUR TRAIL DATA (shared in repo)
-│   ├── trails.geojson    # Your trail routes
-│   ├── trail_images/     # Your hiking photos
-│   ├── states.geojson    # Geographic data
-│   └── parks_simplified.json  # Park boundaries
-└── logo/                 # Application branding
+ app.js                 # Application logic
+ index.html            # Main interface
+ styles.css            # Styling
+ server.py             # Local server
+ data_manager.py       # Data handling
+ data/                 # YOUR TRAIL DATA (shared in repo)
+    trails.geojson    # Your trail routes
+    trail_images/     # Your hiking photos
+    states.geojson    # Geographic data
+    parks_simplified.json  # Park boundaries
+ logo/                 # Application branding
 ```
 
 ## Setting Up Your Personal Data
@@ -140,14 +140,14 @@ http://localhost:5000/api/health
 
 ### File Structure
 ```
-├── app.js              # Main application logic
-├── index.html          # User interface
-├── styles.css          # Styling and layout
-├── server.py           # Flask server for data persistence
-├── data_manager.py     # Data handling and file operations
-├── data/               # User data directory (created automatically)
-├── logo/               # Application branding
-└── README.md           # This file
+ app.js              # Main application logic
+ index.html          # User interface
+ styles.css          # Styling and layout
+ server.py           # Flask server for data persistence
+ data_manager.py     # Data handling and file operations
+ data/               # User data directory (created automatically)
+ logo/               # Application branding
+ README.md           # This file
 ```
 
 ## Privacy & Security Features

@@ -1,11 +1,11 @@
 # Trail Blogger - Complete Deployment Workflow
 
-## 🎯 Goal
+##  Goal
 Ensure all changes made on `localhost:5000` (Flask server) are properly deployed to GitHub Pages at `https://realcaddish.github.io/trailBlogger/`
 
 ---
 
-## 📋 What Needs to Sync
+##  What Needs to Sync
 
 When you edit trails locally, these files change:
 1. **`data/trails.geojson`** - All trail data (names, lengths, coordinates, descriptions, dates, status)
@@ -20,7 +20,7 @@ When you edit trails locally, these files change:
 
 ---
 
-## ✅ The Deployment Workflow
+##  The Deployment Workflow
 
 ### Step 1: Make Changes Locally (Flask Server)
 
@@ -45,11 +45,11 @@ python server.py
 ### Step 2: Test Your Changes Locally
 
 Before deploying, verify:
-- ✅ All trails show correctly in the sidebar
-- ✅ Images load properly
-- ✅ Descriptions display
-- ✅ GPS paths show on map
-- ✅ Statistics are accurate
+-  All trails show correctly in the sidebar
+-  Images load properly
+-  Descriptions display
+-  GPS paths show on map
+-  Statistics are accurate
 
 ### Step 3: Create a Backup (Optional but Recommended)
 
@@ -95,7 +95,7 @@ git push origin main
 
 ---
 
-## 🔍 Verification Checklist
+##  Verification Checklist
 
 After deploying, check:
 
@@ -109,7 +109,7 @@ After deploying, check:
 
 ---
 
-## 🚀 Quick Deploy Script
+##  Quick Deploy Script
 
 I'll create a script to automate this for you:
 
@@ -127,7 +127,7 @@ This will:
 
 ---
 
-## 🛡️ Backup Strategy
+##  Backup Strategy
 
 ### Automatic Backups
 Every time you deploy, the script will:
@@ -149,7 +149,7 @@ Every time you deploy, the script will:
 
 ---
 
-## 🎨 Image Management
+##  Image Management
 
 ### How Images Work
 
@@ -177,7 +177,7 @@ The app automatically constructs full paths:
 
 ---
 
-## ⚠️ Common Issues & Fixes
+##  Common Issues & Fixes
 
 ### Issue 1: Images Don't Show After Deploy
 
@@ -219,7 +219,7 @@ git push origin main
 
 ---
 
-## 📊 Data Integrity Checks
+##  Data Integrity Checks
 
 Before deploying, verify:
 
@@ -236,7 +236,7 @@ python -c "import json; data = json.load(open('data/trails.geojson')); empty = [
 
 ---
 
-## 🔄 Complete Workflow Example
+##  Complete Workflow Example
 
 ### Scenario: Adding a New Trail
 
@@ -253,9 +253,9 @@ python -c "import json; data = json.load(open('data/trails.geojson')); empty = [
 10. Click **"Save Trail"**
 
 **Verify Locally:**
-- Trail appears in sidebar ✓
-- Photos display ✓
-- GPS line shows on map ✓
+- Trail appears in sidebar 
+- Photos display 
+- GPS line shows on map 
 
 **Deploy:**
 ```bash
@@ -271,11 +271,11 @@ git push origin main
 **Verify Live:**
 - Wait 2 minutes
 - Visit site and hard refresh
-- See new trail ✓
+- See new trail 
 
 ---
 
-## 🎯 Best Practices
+##  Best Practices
 
 1. **Always test locally first** before deploying
 2. **Create backups** before major changes
@@ -287,7 +287,7 @@ git push origin main
 
 ---
 
-## 📝 Git Workflow Cheat Sheet
+##  Git Workflow Cheat Sheet
 
 ```bash
 # See what changed
@@ -312,7 +312,7 @@ git checkout main  # switch back
 
 ---
 
-## 🆘 Recovery Procedures
+##  Recovery Procedures
 
 ### If You Accidentally Break Something
 
@@ -335,7 +335,7 @@ git checkout main  # switch back
 
 ---
 
-## 🔗 Quick Reference Links
+##  Quick Reference Links
 
 - **Local Site:** http://localhost:5000
 - **Live Site:** https://realcaddish.github.io/trailBlogger/
@@ -344,7 +344,7 @@ git checkout main  # switch back
 
 ---
 
-## ✨ Pro Tips
+##  Pro Tips
 
 1. **Keep Flask running** while making multiple edits - it auto-saves
 2. **Use the "Data" backup button** regularly - it's your safety net
@@ -355,5 +355,5 @@ git checkout main  # switch back
 
 ---
 
-**You're all set!** This workflow ensures localhost:5000 changes always make it to GitHub Pages correctly. 🎉
+**You're all set!** This workflow ensures localhost:5000 changes always make it to GitHub Pages correctly. 
 

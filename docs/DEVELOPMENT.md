@@ -118,28 +118,28 @@ UI Update (DOM manipulation)
 
 ```
 trailBlogger/
-├── Frontend (Served by Flask)
-│   ├── index.html         # UI layout
-│   ├── app.js            # Application logic
-│   └── styles.css        # Styling
-│
-├── Backend (Flask)
-│   ├── server.py         # API endpoints
-│   └── data_manager.py   # Data handling (optional)
-│
-├── Data (User Content)
-│   ├── trails.geojson    # Trail coordinates
-│   └── trail_images/     # User photos
-│
-└── Configuration
-    ├── requirements.txt  # Python deps
-    ├── .gitignore       # Git rules
-    └── Procfile         # Deployment config
+ Frontend (Served by Flask)
+    index.html         # UI layout
+    app.js            # Application logic
+    styles.css        # Styling
+
+ Backend (Flask)
+    server.py         # API endpoints
+    data_manager.py   # Data handling (optional)
+
+ Data (User Content)
+    trails.geojson    # Trail coordinates
+    trail_images/     # User photos
+
+ Configuration
+     requirements.txt  # Python deps
+     .gitignore       # Git rules
+     Procfile         # Deployment config
 ```
 
 ---
 
-## 🔧 API Endpoints
+##  API Endpoints
 
 ### Trail Management
 

@@ -121,18 +121,18 @@ WARNING: This is a development server. Do not use it in a production deployment.
 
 ```
 trailBlogger/
-├── index.html          # Main application UI
-├── app.js             # Application logic
-├── styles.css         # Styling
-├── server.py          # Flask backend server
-├── requirements.txt   # Python dependencies
-├── data/             # Your trail data (git-ignored)
-│   ├── trails.geojson      # Trail coordinates
-│   └── trail_images/       # Your photos
-└── docs/             # Documentation
-    ├── SETUP.md           # This file
-    ├── GUIDES.md          # User guides
-    └── DEVELOPMENT.md     # Developer docs
+ index.html          # Main application UI
+ app.js             # Application logic
+ styles.css         # Styling
+ server.py          # Flask backend server
+ requirements.txt   # Python dependencies
+ data/             # Your trail data (git-ignored)
+    trails.geojson      # Trail coordinates
+    trail_images/       # Your photos
+ docs/             # Documentation
+     SETUP.md           # This file
+     GUIDES.md          # User guides
+     DEVELOPMENT.md     # Developer docs
 ```
 
 ---

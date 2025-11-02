@@ -1,6 +1,6 @@
 # Trail Blogger Editing Workflow
 
-## 🎯 Design Philosophy
+##  Design Philosophy
 
 **Localhost = Edit & Save**  
 **GitHub Pages = Read-Only Display**
@@ -9,18 +9,18 @@ This is the proper way to use static site hosting like GitHub Pages!
 
 ---
 
-## 🔧 Where You Can Edit
+##  Where You Can Edit
 
-### ✅ localhost:5000 (Full Editing)
+###  localhost:5000 (Full Editing)
 
 **What you can do:**
-- ✅ Add new trails
-- ✅ Edit trail details (name, length, difficulty, dates, descriptions)
-- ✅ Upload images
-- ✅ Change trail status (hiked ↔ unhiked)
-- ✅ Delete trails
-- ✅ Manage data (backups, restore)
-- ✅ All changes are SAVED to disk
+-  Add new trails
+-  Edit trail details (name, length, difficulty, dates, descriptions)
+-  Upload images
+-  Change trail status (hiked ↔ unhiked)
+-  Delete trails
+-  Manage data (backups, restore)
+-  All changes are SAVED to disk
 
 **How to access:**
 ```bash
@@ -30,21 +30,21 @@ Then visit: http://localhost:5000
 
 ---
 
-### 👁️ GitHub Pages (Read-Only)
+###  GitHub Pages (Read-Only)
 
 **What you can do:**
-- ✅ View all trails
-- ✅ See trail details, images, descriptions, dates
-- ✅ Browse the map
-- ✅ Filter by hiked/unhiked
-- ✅ Share with others
+-  View all trails
+-  See trail details, images, descriptions, dates
+-  Browse the map
+-  Filter by hiked/unhiked
+-  Share with others
 
 **What you CANNOT do:**
-- ❌ Add trails
-- ❌ Edit trails
-- ❌ Change trail status
-- ❌ Upload images
-- ❌ Delete trails
+-  Add trails
+-  Edit trails
+-  Change trail status
+-  Upload images
+-  Delete trails
 
 **Why?** GitHub Pages is a static file server - it has no database or backend to save changes.
 
@@ -52,7 +52,7 @@ Then visit: http://localhost:5000
 
 ---
 
-## 📋 Your Workflow
+##  Your Workflow
 
 ### Making Changes
 
@@ -81,7 +81,7 @@ graph LR
    - Add/edit descriptions and dates
    - Upload images
    
-   **✅ All changes automatically save to `data/trails.geojson`**
+   ** All changes automatically save to `data/trails.geojson`**
 
 3. **Deploy to GitHub Pages**
    ```bash
@@ -105,7 +105,7 @@ graph LR
 
 ---
 
-## 🗂️ Trail Status Management
+##  Trail Status Management
 
 ### Changing Status (Hiked ↔ Unhiked)
 
@@ -132,7 +132,7 @@ python deploy.py
 
 ---
 
-## 🚫 What Happens If Someone Edits on GitHub Pages?
+##  What Happens If Someone Edits on GitHub Pages?
 
 **Short answer: Nothing is saved.**
 
@@ -146,7 +146,7 @@ python deploy.py
 
 ---
 
-## 💾 Backup Strategy
+##  Backup Strategy
 
 ### Automatic Backups
 
@@ -179,48 +179,48 @@ This will:
 
 ---
 
-## 📊 Data Flow Diagram
+##  Data Flow Diagram
 
 ```
-┌─────────────────────────────────────────┐
-│         localhost:5000                  │
-│  (Flask Server with Editing)            │
-│                                         │
-│  [Edit Trails] [Change Status]          │
-│  [Add Images] [Update Dates]            │
-│                                         │
-│            ↓ SAVES TO ↓                 │
-│                                         │
-│      data/trails.geojson                │
-│      data/trail_images/                 │
-└─────────────────────────────────────────┘
+
+         localhost:5000                  
+  (Flask Server with Editing)            
+                                         
+  [Edit Trails] [Change Status]          
+  [Add Images] [Update Dates]            
+                                         
+            ↓ SAVES TO ↓                 
+                                         
+      data/trails.geojson                
+      data/trail_images/                 
+
                   ↓
                   ↓ python deploy.py
                   ↓
-┌─────────────────────────────────────────┐
-│              GitHub                     │
-│         (Git Repository)                │
-│                                         │
-│      data/trails.geojson                │
-│      data/trail_images/                 │
-└─────────────────────────────────────────┘
+
+              GitHub                     
+         (Git Repository)                
+                                         
+      data/trails.geojson                
+      data/trail_images/                 
+
                   ↓
                   ↓ Auto-build (2 min)
                   ↓
-┌─────────────────────────────────────────┐
-│         GitHub Pages                    │
-│   (Read-Only Static Site)               │
-│                                         │
-│  [View Trails] [Browse Map]             │
-│  [Read Descriptions] [See Images]       │
-│                                         │
-│  ❌ NO EDITING ❌                        │
-└─────────────────────────────────────────┘
+
+         GitHub Pages                    
+   (Read-Only Static Site)               
+                                         
+  [View Trails] [Browse Map]             
+  [Read Descriptions] [See Images]       
+                                         
+   NO EDITING                         
+
 ```
 
 ---
 
-## ⚡ Quick Reference
+##  Quick Reference
 
 | Action | Where | Command |
 |--------|-------|---------|
@@ -233,18 +233,18 @@ This will:
 
 ---
 
-## 🎯 Benefits of This Workflow
+##  Benefits of This Workflow
 
-✅ **Simple** - One source of truth (localhost)  
-✅ **Safe** - GitHub Pages can't accidentally delete data  
-✅ **Fast** - No complex sync needed  
-✅ **Free** - GitHub Pages hosting is free  
-✅ **Reliable** - Static sites almost never break  
-✅ **Shareable** - Anyone can view your live site  
+ **Simple** - One source of truth (localhost)  
+ **Safe** - GitHub Pages can't accidentally delete data  
+ **Fast** - No complex sync needed  
+ **Free** - GitHub Pages hosting is free  
+ **Reliable** - Static sites almost never break  
+ **Shareable** - Anyone can view your live site  
 
 ---
 
-## ❓ FAQ
+##  FAQ
 
 **Q: Can I add a trail directly on GitHub Pages?**  
 A: No. You must add trails on localhost:5000, then deploy.
@@ -266,15 +266,15 @@ A: Not easily. Flask runs on your computer. You'd need to edit files directly or
 
 ---
 
-## 🎉 Summary
+##  Summary
 
 **Your workflow is now:**
 
-1. ✏️ **Edit** on localhost:5000 (Flask)
-2. 💾 **Save** (automatic when you click "Save" in the UI)
-3. 🚀 **Deploy** with `python deploy.py`
-4. ⏱️ **Wait** 2 minutes
-5. ✅ **Live** on GitHub Pages!
+1.  **Edit** on localhost:5000 (Flask)
+2.  **Save** (automatic when you click "Save" in the UI)
+3.  **Deploy** with `python deploy.py`
+4. ⏱ **Wait** 2 minutes
+5.  **Live** on GitHub Pages!
 
-Simple, safe, and effective! 🎯
+Simple, safe, and effective! 
 

@@ -47,24 +47,24 @@ GITHUB PAGES (Live Site)
 
 ```
 trailBlogger/
-├── data/
-│   ├── trails.geojson          # All trail data (GPS, descriptions, metadata)
-│   └── trail_images/           # Images organized by trail
-│       ├── trail-1761587899908/
-│       │   ├── image1.jpg
-│       │   └── image2.jpg
-│       └── trail-1761919613592/
-│           └── image1.jpg
-│
-├── backups/                     # Created by complete_backup.py
-│   └── backup_YYYYMMDD_HHMMSS/
-│       ├── trails_backup.geojson
-│       ├── trail_images.zip
-│       └── README.md
-│
-├── complete_backup.py           # Create complete backup
-├── complete_restore.py          # Restore from backup
-└── deploy.py                    # Deploy to GitHub Pages
+ data/
+    trails.geojson          # All trail data (GPS, descriptions, metadata)
+    trail_images/           # Images organized by trail
+        trail-1761587899908/
+           image1.jpg
+           image2.jpg
+        trail-1761919613592/
+            image1.jpg
+
+ backups/                     # Created by complete_backup.py
+    backup_YYYYMMDD_HHMMSS/
+        trails_backup.geojson
+        trail_images.zip
+        README.md
+
+ complete_backup.py           # Create complete backup
+ complete_restore.py          # Restore from backup
+ deploy.py                    # Deploy to GitHub Pages
 ```
 
 ---
@@ -269,11 +269,11 @@ const imgUrl = `./data/trail_images/trail-${trail.id}/${imgFilename}`;
 ### Import/Export Compatibility
 
 The system supports:
-- ✅ New backup format (v2.0) with metadata
-- ✅ Plain GeoJSON FeatureCollection
-- ✅ Old backup format (v1.x)
-- ✅ Merge mode (add to existing)
-- ✅ Replace mode (clear and restore)
+-  New backup format (v2.0) with metadata
+-  Plain GeoJSON FeatureCollection
+-  Old backup format (v1.x)
+-  Merge mode (add to existing)
+-  Replace mode (clear and restore)
 
 ---
 
@@ -318,12 +318,12 @@ The system supports:
 ## Summary
 
 The backup/restore system ensures:
-- ✅ All trail data is preserved (GPS, names, lengths, descriptions, dates, status)
-- ✅ All images are backed up and linked correctly
-- ✅ Easy restore from any backup
-- ✅ Seamless deployment to GitHub Pages
-- ✅ Works identically on localhost and live site
-- ✅ No manual image path fixing needed
+-  All trail data is preserved (GPS, names, lengths, descriptions, dates, status)
+-  All images are backed up and linked correctly
+-  Easy restore from any backup
+-  Seamless deployment to GitHub Pages
+-  Works identically on localhost and live site
+-  No manual image path fixing needed
 
 **Questions?** Check the README.md in any backup folder for specific restore instructions.
 
