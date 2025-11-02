@@ -257,34 +257,116 @@
         <div id="aboutModal" class="modal">
             <div class="modal-content about-modal-content">
                 <div class="modal-header">
-                    <h2> Greetings and welcome to Trail Blogger! </h2>
+                    <h2>Welcome to Trail Blogger!</h2>
                     <span class="close">&times;</span>
                 </div>
                 <div class="modal-body">
                     <div class="about-section">
-                        <p>This is a personal project I created to document and share my hiking experiences. I wanted a place where I could keep track of the trails I explore, upload photos from my adventures, and write down my thoughts while they're still fresh.</p>
-                        <p>It's become my go-to space for preserving those moments on the trail—what I saw, how I felt, and the details I don't want to forget. Feel free to explore the trails I've hiked and see the photos from my adventures!</p>
+                        <h3>About This Project</h3>
+                        <p>Trail Blogger is a personal hiking journal where I document my trail adventures, share photos, and preserve memories from the trails I explore. This site uses a two-environment system designed for easy editing and reliable public sharing.</p>
                     </div>
                     
                     <div class="about-section">
-                        <h3>How to Use It</h3>
+                        <h3>How It Works</h3>
+                        <p><strong>This site is read-only.</strong> You're viewing a static GitHub Pages site that displays my trail data. All trail information, GPS coordinates, descriptions, and images are stored in a GeoJSON file and deployed from my local development environment.</p>
+                        
                         <ul class="about-list">
-                            <li>Browse my trails and photos from the map and trail list</li>
-                            <li>Click any trail to see details, images, and my hiking notes</li>
-                            <li>Fork the repository to create your own trail journal</li>
-                            <li>Add your own trails and photos, then push to share them</li>
+                            <li><strong>Viewing:</strong> Browse trails, see photos, read descriptions, and explore the interactive map</li>
+                            <li><strong>Editing:</strong> All changes are made on a local Flask server, then deployed here</li>
+                            <li><strong>Data Storage:</strong> Trail data is stored in <code>data/trails.geojson</code> with images in <code>data/trail_images/</code></li>
                         </ul>
                     </div>
                     
                     <div class="about-section">
-                        <h3>Running Your Own Instance</h3>
-                        <p>To set up your own trail journal:</p>
-                        <ol class="about-list">
-                            <li>Fork or clone this repository</li>
-                            <li>Run: <code>python server.py</code></li>
-                            <li>Open: <code>http://localhost:5000</code></li>
-                            <li>Add your trails and push changes to share them</li>
-                        </ol>
+                        <h3>Creating Your Own Trail Journal</h3>
+                        <p>Want to track your own hiking adventures? Here's how to set up your own instance:</p>
+                        
+                        <h4>1. Get the Code</h4>
+                        <pre><code>git clone https://github.com/RealCaddish/trailBlogger.git
+cd trailBlogger</code></pre>
+                        
+                        <h4>2. Install Dependencies</h4>
+                        <pre><code>pip install -r requirements.txt</code></pre>
+                        
+                        <h4>3. Start the Flask Server (for editing)</h4>
+                        <pre><code>python server.py</code></pre>
+                        <p>Then open <code>http://localhost:5000</code> in your browser.</p>
+                        
+                        <h4>4. Add Your Trails</h4>
+                        <ul class="about-list">
+                            <li>Click "Add Trail" to create new trails</li>
+                            <li>Upload photos (automatically compressed)</li>
+                            <li>Add descriptions, dates, and trail details</li>
+                            <li>Import GPS tracks from your hiking app</li>
+                            <li>All changes save automatically to <code>data/trails.geojson</code></li>
+                        </ul>
+                        
+                        <h4>5. Deploy to GitHub Pages</h4>
+                        <pre><code>python deploy.py</code></pre>
+                        <p>This validates your data, commits changes, and pushes to GitHub. Your site will update in ~2 minutes!</p>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>Two-Environment System</h3>
+                        <div class="workflow-info">
+                            <div class="workflow-step">
+                                <h4>🖥️ Localhost:5000 (Editing)</h4>
+                                <ul class="about-list">
+                                    <li>Add, edit, and delete trails</li>
+                                    <li>Upload and manage images</li>
+                                    <li>Change trail status (hiked/unhiked)</li>
+                                    <li>Create backups</li>
+                                    <li>Changes saved to local files</li>
+                                </ul>
+                            </div>
+                            <div class="workflow-step">
+                                <h4>🌐 GitHub Pages (Public Display)</h4>
+                                <ul class="about-list">
+                                    <li>Read-only static site</li>
+                                    <li>Fast, reliable hosting</li>
+                                    <li>Share with anyone</li>
+                                    <li>No server needed</li>
+                                    <li>Updates via git push</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>Key Features</h3>
+                        <ul class="about-list">
+                            <li><strong>Interactive Maps:</strong> Leaflet.js with trail GPS overlays</li>
+                            <li><strong>Image Management:</strong> Automatic compression and optimization</li>
+                            <li><strong>GeoJSON Storage:</strong> Portable, standard format for trail data</li>
+                            <li><strong>Backup System:</strong> Create and restore complete backups with <code>complete_backup.py</code></li>
+                            <li><strong>Deployment Tool:</strong> One-command deployment with validation</li>
+                            <li><strong>Mobile-Friendly:</strong> Responsive design for viewing on any device</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>Technologies Used</h3>
+                        <ul class="about-list">
+                            <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (vanilla)</li>
+                            <li><strong>Maps:</strong> Leaflet.js with OpenStreetMap tiles</li>
+                            <li><strong>Backend:</strong> Flask (Python) for local editing</li>
+                            <li><strong>Storage:</strong> GeoJSON files + file system for images</li>
+                            <li><strong>Hosting:</strong> GitHub Pages (free static hosting)</li>
+                            <li><strong>Deployment:</strong> Custom Python scripts with git automation</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="about-section">
+                        <h3>Repository & Documentation</h3>
+                        <p>Full source code, setup guides, and workflow documentation available at:</p>
+                        <p><a href="https://github.com/RealCaddish/trailBlogger" target="_blank">github.com/RealCaddish/trailBlogger</a></p>
+                        
+                        <p><strong>Helpful Docs:</strong></p>
+                        <ul class="about-list">
+                            <li><code>EDITING_WORKFLOW.md</code> - Complete editing and deployment guide</li>
+                            <li><code>BACKUP_RESTORE_GUIDE.md</code> - Backup and restore instructions</li>
+                            <li><code>QUICK_DEPLOY.md</code> - Quick reference for deployments</li>
+                        </ul>
                     </div>
                 </div>
             </div>
