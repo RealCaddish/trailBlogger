@@ -546,7 +546,7 @@ body {
     right: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem;
     z-index: 1000;
 }
 
@@ -999,6 +999,7 @@ body {
     
     .mobile-trail-scroll {
         max-height: calc(50vh - 140px);
+        min-height: 200px;
         overflow-y: auto;
         padding: 0.5rem;
         -webkit-overflow-scrolling: touch;

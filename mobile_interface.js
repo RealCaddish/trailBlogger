@@ -48,6 +48,23 @@ function createFloatingActionButton() {
         if (overlay) {
             overlay.classList.remove('hidden');
             fab.classList.add('hidden');
+            
+            // Ensure trails are populated and visible
+            if (window.app && window.app.trails) {
+                console.log('Refreshing trail cards on overlay open');
+                populateMobileTrails();
+                
+                // Reset to "All" filter
+                const filterBtns = overlay.querySelectorAll('.filter-btn');
+                filterBtns.forEach(btn => {
+                    if (btn.dataset.filter === 'all') {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                filterMobileTrails('all');
+            }
         }
     });
 }
@@ -167,13 +184,33 @@ function populateMobileTrails() {
     console.log(`Populating ${trails.length} trails for mobile`);
     
     const container = document.getElementById('mobileTrailScroll');
-    if (!container) return;
+    if (!container) {
+        console.error('Mobile trail scroll container not found!');
+        return;
+    }
     
     container.innerHTML = '';
+    
+    if (trails.length === 0) {
+        container.innerHTML = '<p style="padding: 2rem; text-align: center; color: #6c757d;">No trails found</p>';
+        return;
+    }
     
     trails.forEach(trail => {
         const card = createMobileTrailCard(trail);
         container.appendChild(card);
+    });
+    
+    // Log status counts for debugging
+    const hiked = trails.filter(t => t.status === 'hiked').length;
+    const unhiked = trails.filter(t => t.status !== 'hiked').length;
+    console.log(`Trail status - Hiked: ${hiked}, Unhiked: ${unhiked}`);
+    
+    // Ensure all cards are visible by default
+    const cards = container.querySelectorAll('.mobile-trail-card');
+    console.log(`Created ${cards.length} trail cards`);
+    cards.forEach(card => {
+        card.style.display = 'block';
     });
 }
 
@@ -345,21 +382,47 @@ function resetMapView() {
 }
 
 function filterMobileTrails(filter) {
+    console.log(`Filtering trails by: ${filter}`);
     const cards = document.querySelectorAll('.mobile-trail-card');
+    console.log(`Found ${cards.length} cards to filter`);
+    
+    const container = document.getElementById('mobileTrailScroll');
+    
+    // Remove any existing "no trails" message
+    const existingMessage = container?.querySelector('.no-trails-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    let visibleCount = 0;
     
     cards.forEach(card => {
         const status = card.dataset.status;
         
         if (filter === 'all') {
             card.style.display = 'block';
+            visibleCount++;
         } else if (filter === 'hiked' && status === 'hiked') {
             card.style.display = 'block';
+            visibleCount++;
         } else if (filter === 'unhiked' && status !== 'hiked') {
             card.style.display = 'block';
+            visibleCount++;
         } else {
             card.style.display = 'none';
         }
     });
+    
+    console.log(`${visibleCount} cards visible after filtering`);
+    
+    // Show message if no cards are visible
+    if (visibleCount === 0 && container) {
+        const message = document.createElement('p');
+        message.className = 'no-trails-message';
+        message.style.cssText = 'padding: 2rem; text-align: center; color: #6c757d;';
+        message.textContent = `No ${filter === 'hiked' ? 'hiked' : filter === 'unhiked' ? 'unhiked' : ''} trails found`;
+        container.appendChild(message);
+    }
 }
 
 // Make functions globally available
