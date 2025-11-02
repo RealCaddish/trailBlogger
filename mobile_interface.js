@@ -3,15 +3,19 @@
 
 let originalMapBounds = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Only run on mobile devices
-    if (window.innerWidth > 768) {
-        console.log('Desktop detected, skipping mobile interface');
+// Force mobile interface on narrow screens
+function initMobileInterface() {
+    const isMobile = window.innerWidth <= 768;
+    console.log('=== MOBILE INTERFACE INIT ===');
+    console.log('Window width:', window.innerWidth);
+    console.log('Is mobile:', isMobile);
+    
+    if (!isMobile) {
+        console.log('Desktop mode, skipping mobile interface');
         return;
     }
     
-    console.log('Mobile detected! Initializing mobile interface...');
-    console.log('Screen width:', window.innerWidth);
+    console.log('Creating mobile UI elements...');
     
     // Create mobile overlay structure
     createFloatingActionButton();
@@ -19,26 +23,38 @@ document.addEventListener('DOMContentLoaded', () => {
     createMobileDetailsPanel();
     setupMapClickHandler();
     
+    console.log('Mobile UI elements created');
+    
     // Wait for app to initialize
-    setTimeout(() => {
-        console.log('Checking for trails...');
+    let attempts = 0;
+    const maxAttempts = 20;
+    
+    const checkForTrails = () => {
+        attempts++;
+        console.log(`Attempt ${attempts}: Checking for trails...`);
+        
         if (window.app && window.app.trails) {
-            console.log('Trails found:', window.app.trails.length);
+            console.log('SUCCESS! Trails found:', window.app.trails.length);
+            console.log('First 3 trails:', window.app.trails.slice(0, 3).map(t => t.name));
             populateMobileTrails();
             saveOriginalMapBounds();
         } else {
-            console.log('Waiting for trails to load...');
-            // Retry after app loads
-            const checkInterval = setInterval(() => {
-                if (window.app && window.app.trails && window.app.trails.length > 0) {
-                    console.log('Trails loaded:', window.app.trails.length);
-                    clearInterval(checkInterval);
-                    populateMobileTrails();
-                    saveOriginalMapBounds();
-                }
-            }, 500);
+            console.log('Not ready yet. app:', !!window.app, 'trails:', window.app?.trails?.length);
+            
+            if (attempts < maxAttempts) {
+                setTimeout(checkForTrails, 500);
+            } else {
+                console.error('TIMEOUT: Could not find trails after', maxAttempts, 'attempts');
+            }
         }
-    }, 1000);
+    };
+    
+    setTimeout(checkForTrails, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+    initMobileInterface();
 });
 
 function createFloatingActionButton() {
@@ -470,7 +486,24 @@ function filterMobileTrails(filter) {
     }
 }
 
-// Make functions globally available
+// Make functions globally available for debugging
 window.populateMobileTrails = populateMobileTrails;
 window.closeMobileDetails = closeMobileDetails;
+window.debugMobileTrails = function() {
+    console.log('=== DEBUG INFO ===');
+    console.log('window.app:', window.app);
+    console.log('window.app.trails:', window.app?.trails);
+    console.log('Trail count:', window.app?.trails?.length);
+    console.log('Overlay exists:', !!document.getElementById('mobileTrailOverlay'));
+    console.log('Container exists:', !!document.getElementById('mobileTrailScroll'));
+    console.log('FAB exists:', !!document.getElementById('mobileTrailsFab'));
+    console.log('Cards in DOM:', document.querySelectorAll('.mobile-trail-card').length);
+    
+    if (window.app && window.app.trails) {
+        console.log('Calling populateMobileTrails()...');
+        populateMobileTrails();
+    } else {
+        console.error('Cannot populate - no trails available');
+    }
+};
 
