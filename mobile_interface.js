@@ -27,33 +27,49 @@ function initMobileInterface() {
     
     // Wait for app to initialize
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 40; // Increased timeout
     
     const checkForTrails = () => {
         attempts++;
         console.log(`Attempt ${attempts}: Checking for trails...`);
+        console.log('  window.app:', window.app);
+        console.log('  window.TrailBlogger:', window.TrailBlogger);
         
-        if (window.app && window.app.trails) {
-            console.log('SUCCESS! Trails found:', window.app.trails.length);
-            console.log('First 3 trails:', window.app.trails.slice(0, 3).map(t => t.name));
+        // Try to get trails from window.app or directly from TrailBlogger instance
+        const appInstance = window.app || window.trailBlogger;
+        
+        if (appInstance && appInstance.trails && appInstance.trails.length > 0) {
+            console.log('SUCCESS! Trails found:', appInstance.trails.length);
+            console.log('First 3 trails:', appInstance.trails.slice(0, 3).map(t => t.name));
+            
+            // Make sure window.app is set
+            if (!window.app) {
+                console.log('Setting window.app from appInstance');
+                window.app = appInstance;
+            }
+            
             populateMobileTrails();
             saveOriginalMapBounds();
         } else {
-            console.log('Not ready yet. app:', !!window.app, 'trails:', window.app?.trails?.length);
+            console.log('Not ready yet. app:', !!window.app, 'TrailBlogger:', !!window.TrailBlogger);
             
             if (attempts < maxAttempts) {
                 setTimeout(checkForTrails, 500);
             } else {
                 console.error('TIMEOUT: Could not find trails after', maxAttempts, 'attempts');
+                console.error('Final state - window.app:', window.app);
+                console.error('Final state - window.TrailBlogger:', window.TrailBlogger);
+                console.error('Try running: debugMobileTrails()');
             }
         }
     };
     
-    setTimeout(checkForTrails, 1000);
+    setTimeout(checkForTrails, 1500); // Wait a bit longer for app.js to load
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded');
+    console.log('=== DOM Content Loaded ===');
+    console.log('Starting mobile interface initialization...');
     initMobileInterface();
 });
 

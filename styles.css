@@ -890,9 +890,15 @@ body {
         position: relative;
     }
     
-    /* Hide sidebar completely on mobile */
+    /* Hide sidebar visually on mobile but keep in DOM for app initialization */
     .sidebar {
-        display: none;
+        position: absolute;
+        left: -9999px;
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+        overflow: hidden;
     }
     
     /* Map container - Full screen */
