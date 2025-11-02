@@ -59,6 +59,12 @@ trail-blogger/
     trail_images/     # Your hiking photos
     states.geojson    # Geographic data
     parks_simplified.json  # Park boundaries
+ scripts/              # Utility scripts
+    deploy.py         # Deploy to GitHub Pages
+    complete_backup.py    # Create backups
+    complete_restore.py   # Restore from backups
+    verify_deployment.py  # Verify deployments
+ docs/                 # Documentation
  logo/                 # Application branding
 ```
 
