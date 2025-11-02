@@ -5,9 +5,13 @@ let originalMapBounds = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Only run on mobile devices
-    if (window.innerWidth > 768) return;
+    if (window.innerWidth > 768) {
+        console.log('Desktop detected, skipping mobile interface');
+        return;
+    }
     
-    console.log('Initializing mobile interface...');
+    console.log('Mobile detected! Initializing mobile interface...');
+    console.log('Screen width:', window.innerWidth);
     
     // Create mobile overlay structure
     createFloatingActionButton();
@@ -17,7 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Wait for app to initialize
     setTimeout(() => {
+        console.log('Checking for trails...');
         if (window.app && window.app.trails) {
+            console.log('Trails found:', window.app.trails.length);
             populateMobileTrails();
             saveOriginalMapBounds();
         } else {
@@ -25,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Retry after app loads
             const checkInterval = setInterval(() => {
                 if (window.app && window.app.trails && window.app.trails.length > 0) {
+                    console.log('Trails loaded:', window.app.trails.length);
                     clearInterval(checkInterval);
                     populateMobileTrails();
                     saveOriginalMapBounds();
@@ -44,6 +51,7 @@ function createFloatingActionButton() {
     document.body.appendChild(fab);
     
     fab.addEventListener('click', () => {
+        console.log('FAB clicked, opening overlay');
         const overlay = document.getElementById('mobileTrailOverlay');
         if (overlay) {
             overlay.classList.remove('hidden');
@@ -54,17 +62,29 @@ function createFloatingActionButton() {
                 console.log('Refreshing trail cards on overlay open');
                 populateMobileTrails();
                 
-                // Reset to "All" filter
-                const filterBtns = overlay.querySelectorAll('.filter-btn');
-                filterBtns.forEach(btn => {
-                    if (btn.dataset.filter === 'all') {
-                        btn.classList.add('active');
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-                filterMobileTrails('all');
+                // Wait for DOM to update before filtering
+                setTimeout(() => {
+                    // Reset to "All" filter
+                    const filterBtns = overlay.querySelectorAll('.filter-btn');
+                    filterBtns.forEach(btn => {
+                        if (btn.dataset.filter === 'all') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    
+                    // Check how many cards exist
+                    const cardCount = document.querySelectorAll('.mobile-trail-card').length;
+                    console.log('Cards in DOM before filter:', cardCount);
+                    
+                    filterMobileTrails('all');
+                }, 100);
+            } else {
+                console.error('No trails available!', window.app);
             }
+        } else {
+            console.error('Overlay not found!');
         }
     });
 }
@@ -175,30 +195,40 @@ function createMobileDetailsPanel() {
 }
 
 function populateMobileTrails() {
+    console.log('=== populateMobileTrails called ===');
+    
     if (!window.app || !window.app.trails) {
-        console.log('App or trails not available yet');
+        console.error('App or trails not available yet', { app: window.app });
         return;
     }
     
     const trails = window.app.trails;
-    console.log(`Populating ${trails.length} trails for mobile`);
+    console.log(`Found ${trails.length} trails to populate`);
     
     const container = document.getElementById('mobileTrailScroll');
     if (!container) {
         console.error('Mobile trail scroll container not found!');
+        console.log('Looking for #mobileTrailScroll in document');
+        console.log('Overlay exists:', !!document.getElementById('mobileTrailOverlay'));
         return;
     }
     
+    console.log('Container found, clearing existing content');
     container.innerHTML = '';
     
     if (trails.length === 0) {
+        console.warn('No trails in app.trails array');
         container.innerHTML = '<p style="padding: 2rem; text-align: center; color: #6c757d;">No trails found</p>';
         return;
     }
     
-    trails.forEach(trail => {
+    console.log('Creating trail cards...');
+    trails.forEach((trail, index) => {
         const card = createMobileTrailCard(trail);
         container.appendChild(card);
+        if (index < 3) {
+            console.log(`Card ${index} appended:`, trail.name);
+        }
     });
     
     // Log status counts for debugging
@@ -206,12 +236,23 @@ function populateMobileTrails() {
     const unhiked = trails.filter(t => t.status !== 'hiked').length;
     console.log(`Trail status - Hiked: ${hiked}, Unhiked: ${unhiked}`);
     
+    // Verify cards in container
+    const cardsInContainer = container.querySelectorAll('.mobile-trail-card');
+    console.log(`Cards in container after creation: ${cardsInContainer.length}`);
+    
+    // Verify cards in entire document
+    const cardsInDocument = document.querySelectorAll('.mobile-trail-card');
+    console.log(`Cards in entire document: ${cardsInDocument.length}`);
+    
     // Ensure all cards are visible by default
-    const cards = container.querySelectorAll('.mobile-trail-card');
-    console.log(`Created ${cards.length} trail cards`);
-    cards.forEach(card => {
+    cardsInContainer.forEach((card, index) => {
         card.style.display = 'block';
+        if (index < 3) {
+            console.log(`Card ${index} display:`, card.style.display, 'Class:', card.className);
+        }
     });
+    
+    console.log('=== populateMobileTrails complete ===');
 }
 
 function createMobileTrailCard(trail) {
@@ -219,6 +260,7 @@ function createMobileTrailCard(trail) {
     card.className = 'mobile-trail-card';
     card.dataset.trailId = trail.id;
     card.dataset.status = trail.status || 'unhiked';
+    card.style.display = 'block'; // Force visibility
     
     const status = trail.status === 'hiked' ? 'Hiked' : 'To Do';
     const statusClass = trail.status === 'hiked' ? 'hiked' : 'unhiked';
@@ -235,8 +277,11 @@ function createMobileTrailCard(trail) {
     `;
     
     card.addEventListener('click', () => {
+        console.log('Trail card clicked:', trail.name);
         handleMobileTrailClick(trail);
     });
+    
+    console.log('Created card for trail:', trail.name, 'Status:', card.dataset.status);
     
     return card;
 }
