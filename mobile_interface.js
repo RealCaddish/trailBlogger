@@ -1,6 +1,8 @@
 // mobile_interface.js
 // Handles mobile-specific UI for Trail Blogger
 
+let originalMapBounds = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     // Only run on mobile devices
     if (window.innerWidth > 768) return;
@@ -8,13 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Initializing mobile interface...');
     
     // Create mobile overlay structure
+    createFloatingActionButton();
     createMobileOverlay();
     createMobileDetailsPanel();
+    setupMapClickHandler();
     
     // Wait for app to initialize
     setTimeout(() => {
         if (window.app && window.app.trails) {
             populateMobileTrails();
+            saveOriginalMapBounds();
         } else {
             console.log('Waiting for trails to load...');
             // Retry after app loads
@@ -22,22 +27,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.app && window.app.trails && window.app.trails.length > 0) {
                     clearInterval(checkInterval);
                     populateMobileTrails();
+                    saveOriginalMapBounds();
                 }
             }, 500);
         }
     }, 1000);
 });
 
+function createFloatingActionButton() {
+    const fab = document.createElement('button');
+    fab.className = 'mobile-trails-fab';
+    fab.id = 'mobileTrailsFab';
+    fab.innerHTML = '<i class="fas fa-list"></i>';
+    fab.title = 'View Trails';
+    
+    document.body.appendChild(fab);
+    
+    fab.addEventListener('click', () => {
+        const overlay = document.getElementById('mobileTrailOverlay');
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            fab.classList.add('hidden');
+        }
+    });
+}
+
+function saveOriginalMapBounds() {
+    if (window.app && window.app.map) {
+        setTimeout(() => {
+            originalMapBounds = window.app.map.getBounds();
+            console.log('Original map bounds saved');
+        }, 2000);
+    }
+}
+
+function setupMapClickHandler() {
+    // Wait for map to be initialized
+    const checkMap = setInterval(() => {
+        if (window.app && window.app.map) {
+            clearInterval(checkMap);
+            
+            // Add click handler to map
+            window.app.map.on('click', (e) => {
+                // If details panel is open, close it and reset map
+                const detailsPanel = document.getElementById('mobileTrailDetails');
+                if (detailsPanel && detailsPanel.classList.contains('active')) {
+                    closeMobileDetails();
+                    resetMapView();
+                }
+            });
+            
+            console.log('Map click handler set up');
+        }
+    }, 500);
+}
+
 function createMobileOverlay() {
     const overlay = document.createElement('div');
-    overlay.className = 'mobile-trail-overlay';
+    overlay.className = 'mobile-trail-overlay hidden'; // Start hidden
     overlay.id = 'mobileTrailOverlay';
     
     overlay.innerHTML = `
         <div class="mobile-overlay-header">
             <h3>Trails</h3>
             <button class="mobile-toggle-btn" id="mobileToggleBtn">
-                <i class="fas fa-chevron-up"></i>
+                <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="mobile-trail-filters">
@@ -52,14 +106,11 @@ function createMobileOverlay() {
     
     // Toggle button functionality
     const toggleBtn = document.getElementById('mobileToggleBtn');
+    const fab = document.getElementById('mobileTrailsFab');
+    
     toggleBtn.addEventListener('click', () => {
-        overlay.classList.toggle('hidden');
-        const icon = toggleBtn.querySelector('i');
-        if (overlay.classList.contains('hidden')) {
-            icon.className = 'fas fa-chevron-down';
-        } else {
-            icon.className = 'fas fa-chevron-up';
-        }
+        overlay.classList.add('hidden');
+        if (fab) fab.classList.remove('hidden');
     });
     
     // Filter buttons
@@ -156,12 +207,15 @@ function createMobileTrailCard(trail) {
 function handleMobileTrailClick(trail) {
     console.log('Mobile trail clicked:', trail.name);
     
-    // Hide the trail list overlay
+    // Hide the trail list overlay and show FAB
     const overlay = document.getElementById('mobileTrailOverlay');
+    const fab = document.getElementById('mobileTrailsFab');
+    
     if (overlay) {
         overlay.classList.add('hidden');
-        const icon = document.getElementById('mobileToggleBtn')?.querySelector('i');
-        if (icon) icon.className = 'fas fa-chevron-down';
+    }
+    if (fab) {
+        fab.classList.remove('hidden');
     }
     
     // Highlight selected card
@@ -240,6 +294,11 @@ function showMobileDetails(trail) {
     if (trail.images && trail.images.length > 0) {
         const imageBaseUrl = window.TrailBloggerConfig?.imageBaseUrl || './data/trail_images';
         
+        // Add images heading
+        const heading = document.createElement('h4');
+        heading.textContent = 'Photos';
+        imagesContainer.appendChild(heading);
+        
         trail.images.forEach(imgFilename => {
             const img = document.createElement('img');
             
@@ -259,8 +318,6 @@ function showMobileDetails(trail) {
             
             imagesContainer.appendChild(img);
         });
-    } else {
-        imagesContainer.innerHTML = '<p>No images available.</p>';
     }
     
     // Show panel with animation
@@ -273,16 +330,18 @@ function closeMobileDetails() {
         panel.classList.remove('active');
     }
     
-    // Show trail list again
-    const overlay = document.getElementById('mobileTrailOverlay');
-    if (overlay) {
-        overlay.classList.remove('hidden');
-        const icon = document.getElementById('mobileToggleBtn')?.querySelector('i');
-        if (icon) icon.className = 'fas fa-chevron-up';
-    }
-    
     // Clear selected card
     document.querySelectorAll('.mobile-trail-card').forEach(c => c.classList.remove('selected'));
+}
+
+function resetMapView() {
+    if (window.app && window.app.map && originalMapBounds) {
+        console.log('Resetting map to original view');
+        window.app.map.flyToBounds(originalMapBounds, {
+            duration: 1.5,
+            easeLinearity: 0.5
+        });
+    }
 }
 
 function filterMobileTrails(filter) {
