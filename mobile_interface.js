@@ -397,7 +397,7 @@ function showMobileDetails(trail) {
     // Populate meta info
     const metaContainer = document.getElementById('mobileTrailMeta');
     const status = trail.status === 'hiked' ? 'Hiked' : 'To Do';
-    const statusClass = trail.status === 'hiked' ? 'hiked' : '';
+    const statusClass = trail.status === 'hiked' ? 'hiked' : 'unhiked';
     const length = trail.length ? `${trail.length.toFixed(1)} mi` : '0 mi';
     const date = trail.date_hiked || trail.dateHiked || '';
     
