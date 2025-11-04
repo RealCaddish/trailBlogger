@@ -865,9 +865,10 @@ body {
     }
     
     .header-controls {
-        gap: 0.5rem;
+        gap: 0.6rem;
         flex-wrap: nowrap;
         justify-content: flex-end;
+        align-items: center;
     }
     
     .header-controls .btn {
@@ -932,18 +933,14 @@ body {
         z-index: 1;
     }
     
-    /* Floating button to open trail list - Now in header */
+    /* Trails button - Now part of header-controls flex container */
     .mobile-trails-fab {
-        position: fixed !important;
-        top: 14px !important;
-        right: 10px !important;
-        left: auto !important;
+        position: relative !important;
         width: 36px !important;
         height: 32px !important;
         background: #28a745 !important;
         border-radius: 6px !important;
         box-shadow: none !important;
-        z-index: 2000 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -953,6 +950,8 @@ body {
         transition: all 0.2s ease !important;
         border: 1px solid #28a745 !important;
         backdrop-filter: none !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
     }
     
     .mobile-trails-fab:active {

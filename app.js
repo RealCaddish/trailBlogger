@@ -695,6 +695,39 @@ class TrailBlogger {
     resetToWorldView() {
         console.log('Resetting to worldwide view...');
         
+        // Close description panel (desktop)
+        const descriptionPanel = document.getElementById('descriptionPanel');
+        if (descriptionPanel) {
+            descriptionPanel.classList.remove('active');
+        }
+        
+        // Close mobile trail overlay
+        const mobileOverlay = document.getElementById('mobileTrailOverlay');
+        if (mobileOverlay) {
+            mobileOverlay.classList.add('hidden');
+        }
+        
+        // Close mobile details panel
+        const mobileDetails = document.getElementById('mobileTrailDetails');
+        if (mobileDetails) {
+            mobileDetails.classList.remove('active');
+        }
+        
+        // Show FAB button if it was hidden
+        const fab = document.getElementById('mobileTrailsFab');
+        if (fab) {
+            fab.classList.remove('hidden');
+        }
+        
+        // Clear selected trail
+        this.currentTrail = null;
+        document.querySelectorAll('.trail-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        document.querySelectorAll('.mobile-trail-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
         // Clear search inputs
         const stateSearch = document.getElementById('stateSearch');
         const parkSearch = document.getElementById('parkSearch');

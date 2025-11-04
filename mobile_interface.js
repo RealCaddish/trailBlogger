@@ -87,6 +87,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function createFloatingActionButton() {
     console.log('Creating FAB button...');
+    const headerControls = document.querySelector('.header-controls');
+    if (!headerControls) {
+        console.error('Header controls not found, appending to body as fallback');
+        const fab = document.createElement('button');
+        fab.className = 'mobile-trails-fab';
+        fab.id = 'mobileTrailsFab';
+        fab.innerHTML = '<i class="fas fa-list"></i>';
+        fab.title = 'View Trails';
+        document.body.appendChild(fab);
+        return;
+    }
+    
     const fab = document.createElement('button');
     fab.className = 'mobile-trails-fab';
     fab.id = 'mobileTrailsFab';
@@ -94,8 +106,9 @@ function createFloatingActionButton() {
     fab.title = 'View Trails';
     fab.style.display = 'flex'; // Ensure it's visible
     
-    document.body.appendChild(fab);
-    console.log('FAB button created and added to body');
+    // Append to header-controls so it's on the same line as other buttons
+    headerControls.appendChild(fab);
+    console.log('FAB button created and added to header-controls');
     
     fab.addEventListener('click', () => {
         console.log('FAB clicked, opening overlay');
