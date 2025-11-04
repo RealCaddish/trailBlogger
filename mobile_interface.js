@@ -95,20 +95,36 @@ function createFloatingActionButton() {
         fab.id = 'mobileTrailsFab';
         fab.innerHTML = '<i class="fas fa-list"></i>';
         fab.title = 'View Trails';
+        fab.style.display = 'flex';
         document.body.appendChild(fab);
         return;
     }
     
-    const fab = document.createElement('button');
+    // Check if button already exists
+    let fab = document.getElementById('mobileTrailsFab');
+    if (fab) {
+        console.log('FAB button already exists, removing and recreating');
+        fab.remove();
+    }
+    
+    fab = document.createElement('button');
     fab.className = 'mobile-trails-fab';
     fab.id = 'mobileTrailsFab';
     fab.innerHTML = '<i class="fas fa-list"></i>';
     fab.title = 'View Trails';
     fab.style.display = 'flex'; // Ensure it's visible
+    fab.style.visibility = 'visible'; // Force visibility
     
     // Append to header-controls so it's on the same line as other buttons
     headerControls.appendChild(fab);
     console.log('FAB button created and added to header-controls');
+    
+    // Ensure button is visible
+    setTimeout(() => {
+        fab.classList.remove('hidden');
+        fab.style.display = 'flex';
+        fab.style.visibility = 'visible';
+    }, 100);
     
     fab.addEventListener('click', () => {
         console.log('FAB clicked, opening overlay');

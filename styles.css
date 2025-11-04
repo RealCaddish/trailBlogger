@@ -841,6 +841,13 @@ body {
         display: none !important;
     }
     
+    /* Always show FAB button on mobile */
+    #mobileTrailsFab.mobile-trails-fab {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
     .header-content {
         padding: 0.6rem 1rem;
         flex-direction: row;
@@ -942,6 +949,8 @@ body {
         border-radius: 6px !important;
         box-shadow: none !important;
         display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         align-items: center !important;
         justify-content: center !important;
         color: white !important;
@@ -962,6 +971,12 @@ body {
     
     .mobile-trails-fab.hidden {
         display: none !important;
+    }
+    
+    /* Ensure FAB is visible when not hidden */
+    #mobileTrailsFab:not(.hidden) {
+        display: flex !important;
+        visibility: visible !important;
     }
     
     /* Floating trail list on map */

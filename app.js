@@ -717,6 +717,8 @@ class TrailBlogger {
         const fab = document.getElementById('mobileTrailsFab');
         if (fab) {
             fab.classList.remove('hidden');
+            fab.style.display = 'flex';
+            fab.style.visibility = 'visible';
         }
         
         // Clear selected trail
