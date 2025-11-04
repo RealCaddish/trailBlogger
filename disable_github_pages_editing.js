@@ -33,22 +33,43 @@
             console.log('Hidden: Data Management button');
         }
         
-        // 3. Add read-only indicator to header
+        // 3. Add read-only indicator to header (responsive)
         const headerControls = document.querySelector('.header-controls');
         if (headerControls) {
             const readOnlyBadge = document.createElement('span');
             readOnlyBadge.className = 'read-only-badge';
-            readOnlyBadge.innerHTML = '<i class="fas fa-eye"></i> Read-Only Mode';
-            readOnlyBadge.style.cssText = `
-                background: #6c757d;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-size: 14px;
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-            `;
+            
+            // Check if mobile
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                readOnlyBadge.innerHTML = '<i class="fas fa-eye"></i>';
+                readOnlyBadge.style.cssText = `
+                    background: #6c757d;
+                    color: white;
+                    padding: 0.35rem 0.6rem;
+                    border-radius: 6px;
+                    font-size: 0.7rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0;
+                    max-height: 32px;
+                    line-height: 1;
+                `;
+            } else {
+                readOnlyBadge.innerHTML = '<i class="fas fa-eye"></i> Read-Only';
+                readOnlyBadge.style.cssText = `
+                    background: #6c757d;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+            }
+            
             headerControls.insertBefore(readOnlyBadge, headerControls.firstChild);
         }
         
