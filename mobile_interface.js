@@ -12,6 +12,7 @@ function initMobileInterface() {
     
     if (!isMobile) {
         console.log('Desktop mode, skipping mobile interface');
+        console.log('To see mobile version, resize window to <= 768px width');
         return;
     }
     
@@ -85,13 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function createFloatingActionButton() {
+    console.log('Creating FAB button...');
     const fab = document.createElement('button');
     fab.className = 'mobile-trails-fab';
     fab.id = 'mobileTrailsFab';
     fab.innerHTML = '<i class="fas fa-list"></i>';
     fab.title = 'View Trails';
+    fab.style.display = 'flex'; // Ensure it's visible
     
     document.body.appendChild(fab);
+    console.log('FAB button created and added to body');
     
     fab.addEventListener('click', () => {
         console.log('FAB clicked, opening overlay');
