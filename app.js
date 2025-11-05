@@ -2469,12 +2469,77 @@ class TrailBlogger {
             const savedTrails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
             console.log('Verification: trails in localStorage after save:', savedTrails.length);
             
+            // If running on localhost (not GitHub Pages), also save to server file
+            if (!window.TrailBloggerConfig || !window.TrailBloggerConfig.isGitHubPages) {
+                try {
+                    console.log('Saving trail to server file via API...');
+                    const response = await fetch('/api/trails', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(trailData)
+                    });
+                    
+                    if (response.ok) {
+                        console.log('Trail saved successfully to trails.geojson file');
+                    } else {
+                        const error = await response.json();
+                        console.warn('Server save returned error:', error);
+                        console.warn('Trail saved to localStorage but not to file. Run deploy script to sync.');
+                    }
+                } catch (apiError) {
+                    console.warn('Could not save to server file:', apiError);
+                    console.warn('Trail saved to localStorage only. Make sure Flask server is running.');
+                }
+            }
+            
             console.log('Trail data saved successfully to localStorage');
             return true;
         } catch (error) {
             console.error('Error saving trail data to localStorage:', error);
             alert('Error saving trail data. Please try again or create a backup first.');
             return false;
+        }
+    }
+    
+    async syncAllTrailsToFile() {
+        // Sync all trails from localStorage to trails.geojson file
+        if (window.TrailBloggerConfig && window.TrailBloggerConfig.isGitHubPages) {
+            return; // Don't sync on GitHub Pages
+        }
+        
+        try {
+            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+            if (trails.length === 0) {
+                console.log('No trails in localStorage to sync');
+                return;
+            }
+            
+            console.log(`Syncing ${trails.length} trails from localStorage to file...`);
+            
+            // Sync each trail to the file
+            for (const trail of trails) {
+                try {
+                    const response = await fetch('/api/trails', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(trail)
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn(`Failed to sync trail: ${trail.name}`);
+                    }
+                } catch (error) {
+                    console.warn(`Error syncing trail ${trail.name}:`, error);
+                }
+            }
+            
+            console.log('Finished syncing trails to file');
+        } catch (error) {
+            console.error('Error syncing trails to file:', error);
         }
     }
     
@@ -2546,6 +2611,11 @@ class TrailBlogger {
                 console.log(`  - Coordinates: ${trail.coordinates ? trail.coordinates.length : 0} points`);
                 console.log(`  - Created: ${trail.created_at || 'Unknown'}`);
                 console.log(`  - Updated: ${trail.updated_at || 'Unknown'}`);
+            });
+            
+            // Sync trails to file (in background, don't block)
+            this.syncAllTrailsToFile().catch(err => {
+                console.warn('Background sync failed:', err);
             });
             
             // Update the map with loaded trails
