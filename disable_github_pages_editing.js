@@ -88,8 +88,8 @@
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // Show friendly message
-                    alert('⚠️ Editing Disabled\n\nThis is the read-only live site.\n\nTo make changes:\n1. Run Flask server: python server.py\n2. Visit localhost:5000\n3. Make your edits\n4. Deploy: python deploy.py');
+                    // Show friendly message (compact)
+                    alert('Editing Disabled\n\nThis is the read-only live site.\n\nTo make changes:\n1. Run: python server.py\n2. Visit: localhost:5000\n3. Deploy: python scripts/deploy.py');
                     
                     console.log('Blocked editing action on GitHub Pages');
                     return false;
@@ -113,7 +113,7 @@
         // 6. Disable form submissions
         document.addEventListener('submit', function(e) {
             e.preventDefault();
-            alert('⚠️ Editing Disabled\n\nThis is the read-only live site. Visit localhost:5000 to make changes.');
+            alert('Editing Disabled\n\nThis is the read-only live site.\nVisit localhost:5000 to make changes.');
             return false;
         }, true);
         

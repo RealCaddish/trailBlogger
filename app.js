@@ -905,6 +905,16 @@ class TrailBlogger {
             filteredTrails = this.trails.filter(trail => trail.status === 'unhiked');
         }
         
+        // Sort by park name, then by trail name
+        filteredTrails.sort((a, b) => {
+            const parkA = (a.park || '').toLowerCase();
+            const parkB = (b.park || '').toLowerCase();
+            if (parkA !== parkB) {
+                return parkA.localeCompare(parkB);
+            }
+            return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+        });
+        
         trailList.innerHTML = filteredTrails.map(trail => `
             <div class="trail-item ${trail.status} ${this.selectedTrail && this.selectedTrail.name === trail.name ? 'selected' : ''}" data-trail-name="${this.escapeHtml(trail.name)}">
                 <div class="trail-name">${trail.name || '(Unnamed Trail)'}</div>
@@ -967,26 +977,31 @@ class TrailBlogger {
     
     updateStatistics() {
         const totalTrails = this.trails.length;
-        const hikedTrails = this.trails.filter(trail => trail.status === 'hiked').length;
+        const hikedTrailsList = this.trails.filter(trail => {
+            const status = (trail.status || '').toLowerCase();
+            return status === 'hiked';
+        });
+        const hikedTrails = hikedTrailsList.length;
         
         console.log('Updating statistics...');
         console.log('Total trails:', totalTrails);
         console.log('Hiked trails:', hikedTrails);
         
-        // Debug: Log each hiked trail and its length
-        const hikedTrailsList = this.trails.filter(trail => trail.status === 'hiked');
-        console.log('Hiked trails details:');
-        hikedTrailsList.forEach(trail => {
-            console.log(`  - ${trail.name}: ${trail.length} miles (type: ${typeof trail.length})`);
-        });
-        
+        // Calculate total miles from hiked trails only
         const totalMiles = hikedTrailsList.reduce((sum, trail) => {
-            const length = parseFloat(trail.length) || 0;
-            console.log(`Adding ${length} miles from ${trail.name}`);
+            const length = parseFloat(trail.length);
+            if (isNaN(length) || length < 0) {
+                console.warn(`Invalid length for trail ${trail.name}: ${trail.length}`);
+                return sum;
+            }
             return sum + length;
         }, 0);
         
-        console.log('Total miles calculated:', totalMiles);
+        console.log('Total miles calculated:', totalMiles.toFixed(1));
+        console.log('Hiked trails breakdown:');
+        hikedTrailsList.forEach(trail => {
+            console.log(`  - ${trail.name}: ${parseFloat(trail.length) || 0} miles`);
+        });
         
         document.getElementById('totalTrails').textContent = totalTrails;
         document.getElementById('hikedTrails').textContent = hikedTrails;
@@ -2176,12 +2191,32 @@ class TrailBlogger {
             if (window.TrailBloggerConfig && window.TrailBloggerConfig.isGitHubPages) {
                 if (trail.images && trail.images.length > 0) {
                     const imageBaseUrl = window.TrailBloggerConfig.imageBaseUrl;
-                    imageGallery.innerHTML = trail.images.map(imgFilename => {
-                        // If imgFilename is already a full path, use it directly
-                        // Otherwise, construct path with trail- prefix
-                        const imgUrl = imgFilename.includes('/') 
-                            ? imgFilename 
-                            : `${imageBaseUrl}/trail-${trail.id}/${imgFilename}`;
+                    imageGallery.innerHTML = trail.images.map(imgPath => {
+                        let imgUrl;
+                        
+                        // Check if this is a Flask API path that needs conversion
+                        if (imgPath.includes('/api/trails/')) {
+                            // Extract trail ID and filename from Flask API path
+                            // Format: /api/trails/{trailId}/images/{filename}
+                            const apiMatch = imgPath.match(/\/api\/trails\/(\d+)\/images\/(.+)$/);
+                            if (apiMatch) {
+                                const trailId = apiMatch[1];
+                                const filename = apiMatch[2];
+                                // Convert to static path: ./data/trail_images/trail-{trailId}/{filename}
+                                imgUrl = `${imageBaseUrl}/trail-${trailId}/${filename}`;
+                            } else {
+                                // Fallback: try to extract just the filename
+                                const filename = imgPath.split('/').pop();
+                                imgUrl = `${imageBaseUrl}/trail-${trail.id}/${filename}`;
+                            }
+                        } else if (imgPath.includes('/')) {
+                            // Already a relative or absolute path, use as-is
+                            imgUrl = imgPath;
+                        } else {
+                            // Just a filename, construct path
+                            imgUrl = `${imageBaseUrl}/trail-${trail.id}/${imgPath}`;
+                        }
+                        
                         return `<img src="${imgUrl}" alt="Trail photo" onclick="trailBlogger.openImageModal('${imgUrl}')" />`;
                     }).join('');
                 } else {

@@ -119,12 +119,20 @@ function createFloatingActionButton() {
     headerControls.appendChild(fab);
     console.log('FAB button created and added to header-controls');
     
-    // Ensure button is visible
+    // Ensure button is visible immediately and stays visible
+    fab.classList.remove('hidden');
+    fab.style.display = 'flex';
+    fab.style.visibility = 'visible';
+    fab.style.opacity = '1';
+    
+    // Double-check after a short delay
     setTimeout(() => {
-        fab.classList.remove('hidden');
+        if (fab.classList.contains('hidden')) {
+            fab.classList.remove('hidden');
+        }
         fab.style.display = 'flex';
         fab.style.visibility = 'visible';
-    }, 100);
+    }, 200);
     
     fab.addEventListener('click', () => {
         console.log('FAB clicked, opening overlay');
@@ -278,8 +286,18 @@ function populateMobileTrails() {
         return;
     }
     
-    const trails = window.app.trails;
+    let trails = [...window.app.trails]; // Copy array
     console.log(`Found ${trails.length} trails to populate`);
+    
+    // Sort by park name, then by trail name
+    trails.sort((a, b) => {
+        const parkA = (a.park || '').toLowerCase();
+        const parkB = (b.park || '').toLowerCase();
+        if (parkA !== parkB) {
+            return parkA.localeCompare(parkB);
+        }
+        return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+    });
     
     const container = document.getElementById('mobileTrailScroll');
     if (!container) {
@@ -298,13 +316,32 @@ function populateMobileTrails() {
         return;
     }
     
-    console.log('Creating trail cards...');
-    trails.forEach((trail, index) => {
-        const card = createMobileTrailCard(trail);
-        container.appendChild(card);
-        if (index < 3) {
-            console.log(`Card ${index} appended:`, trail.name);
+    // Group by park for better organization
+    const trailsByPark = {};
+    trails.forEach(trail => {
+        const park = trail.park || 'Other';
+        if (!trailsByPark[park]) {
+            trailsByPark[park] = [];
         }
+        trailsByPark[park].push(trail);
+    });
+    
+    console.log('Creating trail cards grouped by park...');
+    Object.keys(trailsByPark).sort().forEach(park => {
+        // Add park header
+        const parkHeader = document.createElement('div');
+        parkHeader.className = 'mobile-park-header';
+        parkHeader.textContent = park;
+        container.appendChild(parkHeader);
+        
+        // Add trails for this park
+        trailsByPark[park].forEach((trail, index) => {
+            const card = createMobileTrailCard(trail);
+            container.appendChild(card);
+            if (index < 2) {
+                console.log(`Card appended: ${trail.name} (${park})`);
+            }
+        });
     });
     
     // Log status counts for debugging
@@ -336,6 +373,7 @@ function createMobileTrailCard(trail) {
     card.className = 'mobile-trail-card';
     card.dataset.trailId = trail.id;
     card.dataset.status = trail.status || 'unhiked';
+    card.dataset.park = trail.park || 'Other';
     card.style.display = 'block'; // Force visibility
     
     const status = trail.status === 'hiked' ? 'Hiked' : 'To Do';
@@ -457,13 +495,32 @@ function showMobileDetails(trail) {
         heading.textContent = 'Photos';
         imagesContainer.appendChild(heading);
         
-        trail.images.forEach(imgFilename => {
+        trail.images.forEach(imgPath => {
             const img = document.createElement('img');
             
-            // Construct image URL
-            const imgUrl = imgFilename.includes('/')
-                ? imgFilename
-                : `${imageBaseUrl}/trail-${trail.id}/${imgFilename}`;
+            // Construct image URL - handle Flask API paths
+            let imgUrl;
+            if (imgPath.includes('/api/trails/')) {
+                // Extract trail ID and filename from Flask API path
+                // Format: /api/trails/{trailId}/images/{filename}
+                const apiMatch = imgPath.match(/\/api\/trails\/(\d+)\/images\/(.+)$/);
+                if (apiMatch) {
+                    const trailId = apiMatch[1];
+                    const filename = apiMatch[2];
+                    // Convert to static path: ./data/trail_images/trail-{trailId}/{filename}
+                    imgUrl = `${imageBaseUrl}/trail-${trailId}/${filename}`;
+                } else {
+                    // Fallback: try to extract just the filename
+                    const filename = imgPath.split('/').pop();
+                    imgUrl = `${imageBaseUrl}/trail-${trail.id}/${filename}`;
+                }
+            } else if (imgPath.includes('/')) {
+                // Already a relative or absolute path, use as-is
+                imgUrl = imgPath;
+            } else {
+                // Just a filename, construct path
+                imgUrl = `${imageBaseUrl}/trail-${trail.id}/${imgPath}`;
+            }
             
             img.src = imgUrl;
             img.alt = trail.name;
@@ -505,7 +562,8 @@ function resetMapView() {
 function filterMobileTrails(filter) {
     console.log(`Filtering trails by: ${filter}`);
     const cards = document.querySelectorAll('.mobile-trail-card');
-    console.log(`Found ${cards.length} cards to filter`);
+    const parkHeaders = document.querySelectorAll('.mobile-park-header');
+    console.log(`Found ${cards.length} cards and ${parkHeaders.length} park headers to filter`);
     
     const container = document.getElementById('mobileTrailScroll');
     
@@ -517,20 +575,37 @@ function filterMobileTrails(filter) {
     
     let visibleCount = 0;
     
+    // Track which parks have visible trails
+    const parksWithVisibleTrails = new Set();
+    
     cards.forEach(card => {
         const status = card.dataset.status;
+        const park = card.dataset.park || '';
         
         if (filter === 'all') {
             card.style.display = 'block';
             visibleCount++;
+            if (park) parksWithVisibleTrails.add(park);
         } else if (filter === 'hiked' && status === 'hiked') {
             card.style.display = 'block';
             visibleCount++;
+            if (park) parksWithVisibleTrails.add(park);
         } else if (filter === 'unhiked' && status !== 'hiked') {
             card.style.display = 'block';
             visibleCount++;
+            if (park) parksWithVisibleTrails.add(park);
         } else {
             card.style.display = 'none';
+        }
+    });
+    
+    // Show/hide park headers based on visible trails
+    parkHeaders.forEach(header => {
+        const parkName = header.textContent.trim();
+        if (parksWithVisibleTrails.has(parkName)) {
+            header.style.display = 'block';
+        } else {
+            header.style.display = 'none';
         }
     });
     

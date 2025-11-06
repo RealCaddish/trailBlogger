@@ -137,8 +137,9 @@ body {
 /* Description Panel */
 .description-panel {
     width: 400px;
-    background-color: white;
-    border-left: 1px solid #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-left: 1px solid rgba(0,0,0,0.1);
     overflow-y: auto;
     display: none;
     flex-direction: column;
@@ -171,12 +172,20 @@ body {
 .description-content {
     padding: 1.5rem;
     flex: 1;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    margin: 0.5rem;
 }
 
 .trail-description {
     margin-bottom: 1.5rem;
-    line-height: 1.7;
-    color: #333;
+    line-height: 1.8;
+    color: #1a1a2e;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 1rem;
+    border-radius: 6px;
 }
 
 .trail-images {
@@ -1123,6 +1132,24 @@ body {
         color: #000;
     }
     
+    /* Park header in mobile trail list */
+    .mobile-park-header {
+        padding: 0.75rem 1rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: #f8f9fa;
+        border-left: 4px solid #28a745;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #2c5530;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .mobile-park-header:first-child {
+        margin-top: 0;
+    }
+    
     /* Hide ALL desktop sidebar elements on mobile */
     .sidebar,
     .description-panel,
@@ -1187,7 +1214,8 @@ body {
         bottom: 0;
         left: 0;
         right: 0;
-        background: white;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(20px);
         border-radius: 16px 16px 0 0;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
         z-index: 1500;
@@ -1219,6 +1247,15 @@ body {
         max-height: calc(65vh - 30px);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+    }
+    
+    .mobile-details-content .trail-description {
+        background: rgba(255, 255, 255, 0.6);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        line-height: 1.8;
+        color: #1a1a2e;
     }
     
     .mobile-details-header {
