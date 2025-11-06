@@ -285,15 +285,27 @@ function createMobileDetailsPanel() {
     // Close button
     document.getElementById('mobileCloseBtn').addEventListener('click', closeMobileDetails);
     
-    // Handle drag down to close (only on handle)
+    // Handle drag to close/open and click to reopen
     const handle = document.getElementById('mobileDetailsHandle');
     let startY = 0;
     let currentY = 0;
     let isDragging = false;
+    let dragStartTime = 0;
+    
+    // Click handle to reopen if minimized
+    handle.addEventListener('click', (e) => {
+        // Only reopen on click if not dragging (quick tap)
+        if (!isDragging && panel.classList.contains('minimized')) {
+            e.preventDefault();
+            e.stopPropagation();
+            reopenMobileDetails();
+        }
+    });
     
     handle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         isDragging = true;
+        dragStartTime = Date.now();
         panel.style.transition = 'none';
     });
     
@@ -301,23 +313,51 @@ function createMobileDetailsPanel() {
         if (!isDragging) return;
         currentY = e.touches[0].clientY;
         const deltaY = currentY - startY;
-        if (deltaY > 0) {
-            panel.style.transform = `translateY(${deltaY}px)`;
+        const isMinimized = panel.classList.contains('minimized');
+        
+        if (isMinimized) {
+            // When minimized, dragging up should open
+            if (deltaY < 0) {
+                // Dragging up - move panel up
+                const currentTransform = panel.style.transform.match(/translateY\((-?\d+(?:\.\d+)?)px\)/);
+                const currentOffset = currentTransform ? parseFloat(currentTransform[1]) : 0;
+                const maxHeight = panel.offsetHeight || window.innerHeight * 0.75;
+                const newOffset = Math.max(-maxHeight, deltaY);
+                panel.style.transform = `translateY(${newOffset}px)`;
+            }
+        } else {
+            // When open, dragging down should close
+            if (deltaY > 0) {
+                panel.style.transform = `translateY(${deltaY}px)`;
+            }
         }
     });
     
     handle.addEventListener('touchend', () => {
         if (!isDragging) return;
+        const dragDuration = Date.now() - dragStartTime;
         isDragging = false;
         panel.style.transition = '';
         
         const deltaY = currentY - startY;
-        if (deltaY > 100) {
-            // Dragged down enough to close
-            closeMobileDetails();
+        const isMinimized = panel.classList.contains('minimized');
+        
+        if (isMinimized) {
+            // When minimized, dragging up > 50px or quick tap opens
+            if (deltaY < -50 || (Math.abs(deltaY) < 10 && dragDuration < 200)) {
+                reopenMobileDetails();
+            } else {
+                // Snap back to minimized
+                panel.style.transform = '';
+            }
         } else {
-            // Snap back
-            panel.style.transform = '';
+            // When open, dragging down > 100px closes
+            if (deltaY > 100) {
+                closeMobileDetails();
+            } else {
+                // Snap back
+                panel.style.transform = '';
+            }
         }
     });
     
@@ -490,24 +530,108 @@ function handleMobileTrailClick(trail) {
         try {
             const coords = trail.coordinates;
             let centerLat, centerLng;
+            let bounds;
             
             if (Array.isArray(coords) && coords.length >= 2) {
-                if (Array.isArray(coords[0])) {
-                    // Array of coordinates - find center
-                    const lats = coords.map(c => c[1] || c.lat);
-                    const lngs = coords.map(c => c[0] || c.lng);
-                    centerLat = lats.reduce((a, b) => a + b) / lats.length;
-                    centerLng = lngs.reduce((a, b) => a + b) / lngs.length;
-                } else {
-                    // Single coordinate
-                    centerLat = coords[1] || coords.lat;
-                    centerLng = coords[0] || coords.lng;
+                // Flatten coordinates if nested
+                let flatCoords = coords;
+                if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+                    // MultiLineString - flatten all lines
+                    flatCoords = coords.flat();
+                } else if (Array.isArray(coords[0]) && !Array.isArray(coords[0][0])) {
+                    // Already flat array of [lng, lat] pairs
+                    flatCoords = coords;
                 }
                 
-                window.app.map.flyTo([centerLat, centerLng], 13, {
-                    duration: 1.5,
-                    easeLinearity: 0.5
+                // Extract lat/lng arrays
+                const lats = flatCoords.map(c => {
+                    if (Array.isArray(c)) {
+                        return c[1] || c.lat;
+                    }
+                    return c.lat || c.y;
                 });
+                const lngs = flatCoords.map(c => {
+                    if (Array.isArray(c)) {
+                        return c[0] || c.lng;
+                    }
+                    return c.lng || c.x;
+                });
+                
+                // Convert coordinates to Leaflet format [lat, lng]
+                const leafletCoords = flatCoords.map(c => {
+                    if (Array.isArray(c)) {
+                        return [c[1] || c.lat, c[0] || c.lng];
+                    }
+                    return [c.lat || c.y, c.lng || c.x];
+                });
+                
+                // Create bounds from trail coordinates
+                const bounds = L.latLngBounds(leafletCoords);
+                
+                // Position trail at the TOP of the visible map area, but fully visible
+                // Balance between positioning at top and keeping trail fully in view
+                const screenHeight = window.innerHeight;
+                // Use 50-55% of screen height as bottom padding to account for panel
+                const bottomPadding = Math.floor(screenHeight * 0.55);
+                const topPadding = 80; // Top padding to keep trail visible
+                const sidePadding = 30;
+                
+                // Calculate trail dimensions for positioning
+                const center = bounds.getCenter();
+                const latSpan = bounds.getNorth() - bounds.getSouth();
+                const lngSpan = bounds.getEast() - bounds.getWest();
+                
+                // Strategy: Fit bounds with moderate bottom padding, then pan slightly
+                // This positions trail at top while keeping it fully visible
+                if (window.app.map) {
+                    // First, fit bounds with bottom padding to account for panel
+                    if (window.app.map.flyToBounds && typeof window.app.map.flyToBounds === 'function') {
+                        window.app.map.flyToBounds(bounds, {
+                            padding: [topPadding, sidePadding, bottomPadding, sidePadding],
+                            maxZoom: 13,
+                            duration: 1.5,
+                            easeLinearity: 0.5
+                        });
+                        
+                        // After animation, pan slightly south to move trail UP on screen
+                        // Use smaller pan amount to keep trail fully visible
+                        setTimeout(() => {
+                            const panPixels = screenHeight * 0.22; // Pan south by 22% of screen (increased slightly)
+                            
+                            window.app.map.panBy([0, panPixels], { // Positive Y pans south = moves content up
+                                duration: 0.6
+                            });
+                        }, 1800); // After flyToBounds animation
+                    } else if (window.app.map.fitBounds && typeof window.app.map.fitBounds === 'function') {
+                        // Use fitBounds (immediate)
+                        window.app.map.fitBounds(bounds, {
+                            padding: [topPadding, sidePadding, bottomPadding, sidePadding],
+                            maxZoom: 13
+                        });
+                        
+                        // Then pan slightly south to move trail UP on screen
+                        setTimeout(() => {
+                            const panPixels = screenHeight * 0.25; // Pan south 25% of screen (increased slightly)
+                            
+                            window.app.map.panBy([0, panPixels], { // Positive Y pans south = moves content up
+                                duration: 0.5
+                            });
+                        }, 150);
+                    } else {
+                        // Fallback: calculate shifted center to position trail at top
+                        // Shift center SOUTH slightly to move trail UP on screen
+                        const southShift = latSpan * 0.4; // Shift 40% of trail height south (increased slightly)
+                        const shiftedCenter = [center.lat - southShift, center.lng]; // Subtract to go south
+                        
+                        const idealZoom = window.app.map.getBoundsZoom ? window.app.map.getBoundsZoom(bounds, false) : 12;
+                        const zoom = Math.min(Math.max(idealZoom - 2, 10), 12.5);
+                        
+                        window.app.map.flyTo(shiftedCenter, zoom, {
+                            duration: 1.5,
+                            easeLinearity: 0.5
+                        });
+                    }
+                }
                 
                 // Update trail overlay on map
                 if (window.app.currentTrail) {
@@ -612,25 +736,30 @@ function showMobileDetails(trail) {
         photosContent.classList.remove('active');
     }
     
-    // Show panel with animation
+    // Show panel with animation (remove minimized if present)
+    panel.classList.remove('minimized');
     panel.classList.add('active');
 }
 
 function closeMobileDetails() {
     const panel = document.getElementById('mobileTrailDetails');
     if (panel) {
+        // Instead of completely hiding, minimize it (show just handle)
         panel.classList.remove('active');
+        panel.classList.add('minimized');
         // Reset transform in case it was dragged
         panel.style.transform = '';
     }
     
-    // Clear selected card
-    document.querySelectorAll('.mobile-trail-card').forEach(c => c.classList.remove('selected'));
-    
-    // Reset map view when closing
-    if (window.app && window.app.resetToWorldView) {
-        // Don't reset map view automatically - let user control it
-        // window.app.resetToWorldView();
+    // Don't clear selected card - user might want to reopen
+    // document.querySelectorAll('.mobile-trail-card').forEach(c => c.classList.remove('selected'));
+}
+
+function reopenMobileDetails() {
+    const panel = document.getElementById('mobileTrailDetails');
+    if (panel) {
+        panel.classList.remove('minimized');
+        panel.classList.add('active');
     }
 }
 
