@@ -259,12 +259,24 @@ function createMobileDetailsPanel() {
                     <h2 id="mobileTrailName">Trail Name</h2>
                     <div class="mobile-trail-meta" id="mobileTrailMeta"></div>
                 </div>
-                <button class="mobile-close-btn" id="mobileCloseBtn">
+                <button class="mobile-close-btn" id="mobileCloseBtn" title="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="mobile-trail-description" id="mobileTrailDescription"></div>
-            <div class="mobile-trail-images" id="mobileTrailImages"></div>
+            <div class="mobile-details-tabs">
+                <button class="mobile-tab-btn active" data-tab="description">
+                    <i class="fas fa-align-left"></i> Description
+                </button>
+                <button class="mobile-tab-btn" data-tab="photos">
+                    <i class="fas fa-images"></i> Photos
+                </button>
+            </div>
+            <div class="mobile-tab-content active" id="mobileTabDescription">
+                <div class="mobile-trail-description" id="mobileTrailDescription"></div>
+            </div>
+            <div class="mobile-tab-content" id="mobileTabPhotos">
+                <div class="mobile-trail-images" id="mobileTrailImages"></div>
+            </div>
         </div>
     `;
     
@@ -273,9 +285,63 @@ function createMobileDetailsPanel() {
     // Close button
     document.getElementById('mobileCloseBtn').addEventListener('click', closeMobileDetails);
     
-    // Handle drag to close
+    // Handle drag down to close (only on handle)
     const handle = document.getElementById('mobileDetailsHandle');
-    handle.addEventListener('click', closeMobileDetails);
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+    
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        panel.style.transition = 'none';
+    });
+    
+    handle.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        if (deltaY > 0) {
+            panel.style.transform = `translateY(${deltaY}px)`;
+        }
+    });
+    
+    handle.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        panel.style.transition = '';
+        
+        const deltaY = currentY - startY;
+        if (deltaY > 100) {
+            // Dragged down enough to close
+            closeMobileDetails();
+        } else {
+            // Snap back
+            panel.style.transform = '';
+        }
+    });
+    
+    // Tab switching
+    document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            
+            // Update active tab button
+            document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update active tab content
+            document.querySelectorAll('.mobile-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`mobileTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.add('active');
+        });
+    });
+    
+    // Click outside to close (on backdrop)
+    panel.addEventListener('click', (e) => {
+        if (e.target === panel) {
+            closeMobileDetails();
+        }
+    });
 }
 
 function populateMobileTrails() {
@@ -490,11 +556,6 @@ function showMobileDetails(trail) {
     if (trail.images && trail.images.length > 0) {
         const imageBaseUrl = window.TrailBloggerConfig?.imageBaseUrl || './data/trail_images';
         
-        // Add images heading
-        const heading = document.createElement('h4');
-        heading.textContent = 'Photos';
-        imagesContainer.appendChild(heading);
-        
         trail.images.forEach(imgPath => {
             const img = document.createElement('img');
             
@@ -533,6 +594,22 @@ function showMobileDetails(trail) {
             
             imagesContainer.appendChild(img);
         });
+    } else {
+        // No images message
+        imagesContainer.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 2rem;">No photos available for this trail.</p>';
+    }
+    
+    // Reset to description tab when opening
+    const descTab = document.querySelector('.mobile-tab-btn[data-tab="description"]');
+    const photosTab = document.querySelector('.mobile-tab-btn[data-tab="photos"]');
+    const descContent = document.getElementById('mobileTabDescription');
+    const photosContent = document.getElementById('mobileTabPhotos');
+    
+    if (descTab && photosTab && descContent && photosContent) {
+        descTab.classList.add('active');
+        photosTab.classList.remove('active');
+        descContent.classList.add('active');
+        photosContent.classList.remove('active');
     }
     
     // Show panel with animation
@@ -543,10 +620,18 @@ function closeMobileDetails() {
     const panel = document.getElementById('mobileTrailDetails');
     if (panel) {
         panel.classList.remove('active');
+        // Reset transform in case it was dragged
+        panel.style.transform = '';
     }
     
     // Clear selected card
     document.querySelectorAll('.mobile-trail-card').forEach(c => c.classList.remove('selected'));
+    
+    // Reset map view when closing
+    if (window.app && window.app.resetToWorldView) {
+        // Don't reset map view automatically - let user control it
+        // window.app.resetToWorldView();
+    }
 }
 
 function resetMapView() {
