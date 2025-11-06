@@ -154,6 +154,8 @@ Thumbs.db
 # Application specific - Personal Data (DO NOT COMMIT)
 uploads/
 images/
+# Exception: allow data/images/ directory (for trail images and about section photos)
+!data/images/
 *.db
 *.sqlite
 *.sqlite3

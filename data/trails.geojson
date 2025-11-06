@@ -17,8 +17,8 @@
           "/api/trails/1761587899908/images/4_compressed_b92676f0.jpg",
           "/api/trails/1761587899908/images/5_compressed_391107f0.jpg"
         ],
-        "created_at": "2025-11-06T15:57:03.788289",
-        "updated_at": "2025-11-06T15:57:03.788289",
+        "created_at": "2025-11-06T16:07:44.147198",
+        "updated_at": "2025-11-06T16:07:44.147198",
         "trail_id": 1761587899908
       },
       "geometry": {
@@ -9034,8 +9034,8 @@
           "/api/trails/1761919613592/images/PXL_20240421_164414246_compressed_22f4757e.jpg",
           "/api/trails/1761919613592/images/PXL_20240421_175321047_compressed_23297437.jpg"
         ],
-        "created_at": "2025-11-06T15:57:04.520456",
-        "updated_at": "2025-11-06T15:57:04.520456",
+        "created_at": "2025-11-06T16:07:44.790866",
+        "updated_at": "2025-11-06T16:07:44.790866",
         "trail_id": 1761919613592
       },
       "geometry": {
@@ -19575,8 +19575,8 @@
         "date_hiked": null,
         "blog_post": "",
         "images": [],
-        "created_at": "2025-11-06T15:57:04.059350",
-        "updated_at": "2025-11-06T15:57:04.059350",
+        "created_at": "2025-11-06T16:07:44.329240",
+        "updated_at": "2025-11-06T16:07:44.329240",
         "trail_id": 1761589504571
       },
       "geometry": {
@@ -38161,8 +38161,8 @@
           "/api/trails/1756906284678/images/DSC_13052_1de6283c.JPG",
           "/api/trails/1756906284678/images/DSC_13602_acc0d532.JPG"
         ],
-        "created_at": "2025-11-06T15:57:02.425358",
-        "updated_at": "2025-11-06T15:57:02.425358",
+        "created_at": "2025-11-06T16:07:42.949928",
+        "updated_at": "2025-11-06T16:07:42.949928",
         "trail_id": 1756906284678
       },
       "geometry": {
@@ -43775,8 +43775,8 @@
           "/api/trails/1756907183600/images/13_643c1c40.JPG",
           "/api/trails/1756907183600/images/14_a667dddf.JPG"
         ],
-        "created_at": "2025-11-06T15:57:02.879466",
-        "updated_at": "2025-11-06T15:57:02.879466",
+        "created_at": "2025-11-06T16:07:43.249996",
+        "updated_at": "2025-11-06T16:07:43.249996",
         "trail_id": 1756907183600
       },
       "geometry": {
@@ -64422,8 +64422,8 @@
           "/api/trails/1760976897087/images/DSC_3720_compressed_28d6d928.jpg",
           "/api/trails/1760976897087/images/DSC_3843_compressed_ae5a09a5.jpg"
         ],
-        "created_at": "2025-11-06T15:57:03.136527",
-        "updated_at": "2025-11-06T15:57:03.136527",
+        "created_at": "2025-11-06T16:07:43.421035",
+        "updated_at": "2025-11-06T16:07:43.421035",
         "trail_id": 1760976897087
       },
       "geometry": {
@@ -64962,8 +64962,8 @@
           "/api/trails/1761576217429/images/DSC_1022_compressed_1_bf7732fe.jpg",
           "/api/trails/1761576217429/images/DSC_1026_compressed_1_685eade4.jpg"
         ],
-        "created_at": "2025-11-06T15:57:03.333827",
-        "updated_at": "2025-11-06T15:57:03.333827",
+        "created_at": "2025-11-06T16:07:43.702098",
+        "updated_at": "2025-11-06T16:07:43.702098",
         "trail_id": 1761576217429
       },
       "geometry": {
@@ -72697,8 +72697,8 @@
         "date_hiked": null,
         "blog_post": "This is a trail I like to do here in Lexington occasionally. There are gorgeous views from the western section of the trail, but it's also great for trail running. I like to do this one when I have a free Sunday afternoon or two. ",
         "images": [],
-        "created_at": "2025-11-06T15:57:03.600267",
-        "updated_at": "2025-11-06T15:57:03.600267",
+        "created_at": "2025-11-06T16:07:43.870136",
+        "updated_at": "2025-11-06T16:07:43.870136",
         "trail_id": 1761576497526
       },
       "geometry": {
@@ -78927,8 +78927,8 @@
         "date_hiked": null,
         "blog_post": "",
         "images": [],
-        "created_at": "2025-11-06T15:57:04.245393",
-        "updated_at": "2025-11-06T15:57:04.245393",
+        "created_at": "2025-11-06T16:07:44.607825",
+        "updated_at": "2025-11-06T16:07:44.607825",
         "trail_id": 1761589659921
       },
       "geometry": {
@@ -89798,8 +89798,8 @@
           "/api/trails/1761920961072/images/PXL_20230306_013756556_compressed_bea161c5.jpg",
           "/api/trails/1761920961072/images/PXL_20230306_0138569162_compressed_d1076ab4.jpg"
         ],
-        "created_at": "2025-11-06T15:57:04.694495",
-        "updated_at": "2025-11-06T15:57:04.694495",
+        "created_at": "2025-11-06T16:07:45.058926",
+        "updated_at": "2025-11-06T16:07:45.058926",
         "trail_id": 1761920961072
       },
       "geometry": {
@@ -93421,10 +93421,21 @@
         "difficulty": "easy",
         "status": "hiked",
         "date_hiked": "2025-10-12",
-        "blog_post": "",
-        "images": [],
-        "created_at": "2025-11-06T15:57:04.967557",
-        "updated_at": "2025-11-06T15:57:04.967557",
+        "blog_post": "This was an enjoyable 2.4-mile out trail to the waterfall by taking the gravel USFS road above the main Cumberland Falls. There were a few creek crossings to get to DS Falls, but once we were there, it was well-worth it. The colors have begun to change in the park and we notices strands of red, yellow, and orange leaves beginning to stretch in much of the tree lines above the falls. The water was cold but refreshing after hiking down to this section of the creek.",
+        "images": [
+          "/api/trails/1762112770146/images/IMG-20251106-WA0009_compressed_cdbdd7b1.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0010_compressed_3decb18e.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0011_compressed_61b34c22.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0012_compressed_6ca99e37.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0013_compressed_e479d2e9.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0009_compressed_cdbdd7b1.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0011_compressed_61b34c22.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0010_compressed_3decb18e.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0012_compressed_6ca99e37.jpg",
+          "/api/trails/1762112770146/images/IMG-20251106-WA0013_compressed_e479d2e9.jpg"
+        ],
+        "created_at": "2025-11-06T16:07:45.246969",
+        "updated_at": "2025-11-06T16:07:45.246969",
         "trail_id": 1762112770146
       },
       "geometry": {
@@ -94119,8 +94130,8 @@
           "/api/trails/1762268224863/images/PXL_20251104_2034132112_compressed_afca701d.jpg",
           "/api/trails/1762268224863/images/PXL_20251104_205302897_compressed_1bb4f374.jpg"
         ],
-        "created_at": "2025-11-06T15:57:05.150597",
-        "updated_at": "2025-11-06T15:57:05.150597",
+        "created_at": "2025-11-06T16:07:45.509568",
+        "updated_at": "2025-11-06T16:07:45.509568",
         "trail_id": 1762268224863
       },
       "geometry": {
@@ -96589,8 +96600,8 @@
         "date_hiked": null,
         "blog_post": "",
         "images": [],
-        "created_at": "2025-11-06T15:57:05.430661",
-        "updated_at": "2025-11-06T15:57:05.430661",
+        "created_at": "2025-11-06T16:07:45.694611",
+        "updated_at": "2025-11-06T16:07:45.694611",
         "trail_id": 1762268627297
       },
       "geometry": {
@@ -102504,8 +102515,8 @@
         "date_hiked": null,
         "blog_post": "",
         "images": [],
-        "created_at": "2025-11-06T15:57:05.602700",
-        "updated_at": "2025-11-06T15:57:05.602700",
+        "created_at": "2025-11-06T16:07:45.965672",
+        "updated_at": "2025-11-06T16:07:45.965672",
         "trail_id": 1762268646814
       },
       "geometry": {
