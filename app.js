@@ -2673,7 +2673,9 @@ class TrailBlogger {
             // On GitHub Pages, load from trails.geojson directly (skip localStorage)
             if (window.TrailBloggerConfig && window.TrailBloggerConfig.isGitHubPages) {
                 try {
-                    const response = await fetch(window.TrailBloggerConfig.trailsDataUrl);
+                    // Add cache busting to ensure we get the latest descriptions
+                    const url = window.TrailBloggerConfig.trailsDataUrl + '?t=' + Date.now();
+                    const response = await fetch(url);
                     if (response.ok) {
                         const geojsonData = await response.json();
                         // Convert GeoJSON features to trail format
