@@ -44,28 +44,53 @@ class TrailDataManager:
             bool: True if successful, False otherwise
         """
         try:
+            # Normalize trail name (trim whitespace)
+            trail_name = trail_data.get('name', '').strip()
+            if not trail_name:
+                logger.error("Trail name is required")
+                return False
+            
             # Load existing trails
             trails = self.load_all_trails()
             
-            # Check if trail already exists (by name)
+            # Check if trail already exists (by normalized name)
             existing_trail = None
-            for trail in trails.get('features', []):
-                if trail['properties'].get('name') == trail_data.get('name'):
+            existing_index = None
+            for i, trail in enumerate(trails.get('features', [])):
+                existing_name = trail['properties'].get('name', '').strip()
+                if existing_name.lower() == trail_name.lower():
                     existing_trail = trail
+                    existing_index = i
                     break
+            
+            # Deduplicate images
+            images = trail_data.get('images', [])
+            seen_images = set()
+            unique_images = []
+            for img in images:
+                # Normalize image URL/path for comparison
+                img_normalized = img.strip()
+                if img_normalized and img_normalized not in seen_images:
+                    seen_images.add(img_normalized)
+                    unique_images.append(img)
+            
+            # Preserve created_at if updating existing trail
+            created_at = datetime.now().isoformat()
+            if existing_trail:
+                created_at = existing_trail['properties'].get('created_at', created_at)
             
             # Create GeoJSON feature
             feature = {
                 "type": "Feature",
                 "properties": {
-                    "name": trail_data.get('name', ''),
+                    "name": trail_name,  # Use normalized name
                     "length": trail_data.get('length', 0),
                     "difficulty": trail_data.get('difficulty', 'moderate'),
                     "status": trail_data.get('status', 'unhiked'),
                     "date_hiked": trail_data.get('dateHiked'),
                     "blog_post": trail_data.get('blogPost', ''),
-                    "images": trail_data.get('images', []),
-                    "created_at": datetime.now().isoformat(),
+                    "images": unique_images,  # Use deduplicated images
+                    "created_at": created_at,
                     "updated_at": datetime.now().isoformat(),
                     "trail_id": trail_data.get('id', str(datetime.now().timestamp()))
                 },
@@ -76,20 +101,29 @@ class TrailDataManager:
             }
             
             # Update existing trail or add new one
-            if existing_trail:
-                # Update existing trail
-                for i, trail in enumerate(trails.get('features', [])):
-                    if trail['properties'].get('name') == trail_data.get('name'):
-                        trails['features'][i] = feature
-                        trails['features'][i]['properties']['updated_at'] = datetime.now().isoformat()
-                        break
-                logger.info(f"Updated trail: {trail_data.get('name')}")
+            if existing_trail and existing_index is not None:
+                # Update existing trail (merge images if needed)
+                existing_images = existing_trail['properties'].get('images', [])
+                # Merge and deduplicate with new images
+                all_images = list(existing_images) + unique_images
+                seen = set()
+                merged_images = []
+                for img in all_images:
+                    img_norm = img.strip()
+                    if img_norm and img_norm not in seen:
+                        seen.add(img_norm)
+                        merged_images.append(img)
+                feature['properties']['images'] = merged_images
+                
+                trails['features'][existing_index] = feature
+                trails['features'][existing_index]['properties']['updated_at'] = datetime.now().isoformat()
+                logger.info(f"Updated trail: {trail_name}")
             else:
                 # Add new trail
                 if 'features' not in trails:
                     trails['features'] = []
                 trails['features'].append(feature)
-                logger.info(f"Added new trail: {trail_data.get('name')}")
+                logger.info(f"Added new trail: {trail_name}")
             
             # Save to file
             self.save_geojson(trails)

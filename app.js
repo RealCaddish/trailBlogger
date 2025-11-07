@@ -1468,8 +1468,27 @@ class TrailBlogger {
             }
         }
         
-        // Combine existing and new images
-        const allImages = [...existingImages, ...imageUrls];
+        // Combine existing and new images, deduplicating by URL
+        const seenUrls = new Set();
+        const allImages = [];
+        
+        // Add existing images first
+        for (const img of existingImages) {
+            const normalized = img.trim();
+            if (normalized && !seenUrls.has(normalized)) {
+                seenUrls.add(normalized);
+                allImages.push(img);
+            }
+        }
+        
+        // Add new images
+        for (const img of imageUrls) {
+            const normalized = img.trim();
+            if (normalized && !seenUrls.has(normalized)) {
+                seenUrls.add(normalized);
+                allImages.push(img);
+            }
+        }
         
         const trailData = {
             id: trailId,
