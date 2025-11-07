@@ -1530,6 +1530,14 @@ class TrailBlogger {
             }
         }
         
+        // Preserve existing blogPost if form field is empty
+        const existingBlogPost = existingTrailIndex >= 0 ? 
+            (this.trails[existingTrailIndex].blogPost || 
+             this.trails[existingTrailIndex].blog_post || 
+             this.trails[existingTrailIndex].description || '') : '';
+        const formBlogPost = (formData.get('trailBlog') || '').trim();
+        const finalBlogPost = formBlogPost || existingBlogPost;
+        
         const trailData = {
             id: trailId,
             name: trailName,
@@ -1538,7 +1546,7 @@ class TrailBlogger {
             difficulty: formData.get('trailDifficulty'),
             status: formData.get('trailStatus'),
             dateHiked: formData.get('trailDate') || null,
-            blogPost: formData.get('trailBlog'),
+            blogPost: finalBlogPost, // Use form value if provided, otherwise preserve existing
             images: allImages,
             coordinates: existingTrailIndex >= 0 ? this.trails[existingTrailIndex].coordinates : [],
             // Preserve original GeoJSON geometry if it exists
@@ -2772,10 +2780,10 @@ class TrailBlogger {
                 console.log(`  - Updated: ${trail.updated_at || 'Unknown'}`);
             });
             
-            // Sync trails to file (in background, don't block)
-            this.syncAllTrailsToFile().catch(err => {
-                console.warn('Background sync failed:', err);
-            });
+            // DON'T sync from localStorage to file - the file is authoritative
+            // syncAllTrailsToFile() was overwriting descriptions from the file
+            // We now load from file first, then update localStorage with file data
+            // console.log('Skipping syncAllTrailsToFile() - file is authoritative source');
             
             // Update the map with loaded trails
             this.updateMapTrails();

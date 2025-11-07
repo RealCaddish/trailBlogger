@@ -115,6 +115,27 @@ class TrailDataManager:
                         merged_images.append(img)
                 feature['properties']['images'] = merged_images
                 
+                # PRESERVE existing blog_post if new one is empty or missing
+                existing_blog_post = existing_trail['properties'].get('blog_post', '').strip()
+                new_blog_post = trail_data.get('blogPost', '').strip() or trail_data.get('blog_post', '').strip()
+                if existing_blog_post and (not new_blog_post or new_blog_post == ''):
+                    # Keep existing description if new one is empty
+                    feature['properties']['blog_post'] = existing_blog_post
+                    logger.info(f"Preserved existing description for {trail_name} ({len(existing_blog_post)} chars)")
+                elif not new_blog_post and existing_blog_post:
+                    # Always preserve if incoming is empty
+                    feature['properties']['blog_post'] = existing_blog_post
+                
+                # PRESERVE other fields if they're missing in new data
+                if not feature['properties'].get('length', 0) and existing_trail['properties'].get('length', 0):
+                    feature['properties']['length'] = existing_trail['properties']['length']
+                if not feature['properties'].get('difficulty') and existing_trail['properties'].get('difficulty'):
+                    feature['properties']['difficulty'] = existing_trail['properties']['difficulty']
+                if not feature['properties'].get('status') and existing_trail['properties'].get('status'):
+                    feature['properties']['status'] = existing_trail['properties']['status']
+                if not feature['properties'].get('date_hiked') and existing_trail['properties'].get('date_hiked'):
+                    feature['properties']['date_hiked'] = existing_trail['properties']['date_hiked']
+                
                 trails['features'][existing_index] = feature
                 trails['features'][existing_index]['properties']['updated_at'] = datetime.now().isoformat()
                 logger.info(f"Updated trail: {trail_name}")
