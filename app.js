@@ -380,9 +380,11 @@ class TrailBlogger {
             features: []
         }, {
             style: (feature) => {
-                const status = feature.properties.status;
+                const status = (feature.properties.status || 'unhiked').toLowerCase();
+                // Match trail card colors: blue (#007cbf) for hiked, yellow (#ffc107) for unhiked
+                const color = status === 'hiked' ? '#007cbf' : '#ffc107';
                 return {
-                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
+                    color: color,
                     weight: 4,
                     opacity: 0.8
                 };
@@ -431,6 +433,10 @@ class TrailBlogger {
                     return null;
                 }
                 
+                // Get description from multiple possible fields
+                const blogPost = props.blog_post || props.description || props.blogPost || '';
+                const description = blogPost; // Use the same value for both fields
+                
                 return {
                     id: props.trail_id || props.id || Date.now(),
                     name: props.name || '',
@@ -439,10 +445,13 @@ class TrailBlogger {
                     difficulty: props.difficulty || 'moderate',
                     status: props.status || 'unhiked',
                     dateHiked: props.date_hiked || props.dateHiked || null,
-                    description: props.blog_post || props.description || '',
+                    description: description, // Set description field
+                    blogPost: blogPost, // Set blogPost field (same value)
+                    blog_post: blogPost, // Also keep original field name
                     images: props.images || [],
                     coordinates: geometry.coordinates || [],
-                    geometryType: geometry.type || 'LineString'
+                    geometryType: geometry.type || 'LineString',
+                    originalGeoJSON: feature // Preserve original GeoJSON for geometry
                 };
             })
             .filter(trail => trail !== null); // Remove null entries
@@ -906,13 +915,44 @@ class TrailBlogger {
         }
         
         // Sort by park name, then by trail name
+        // Sort: Hiked trails first (most recent at top), then unhiked at bottom
+        // Within hiked: sort by date (most recent first), then by name
+        // Within unhiked: sort by name
         filteredTrails.sort((a, b) => {
-            const parkA = (a.park || '').toLowerCase();
-            const parkB = (b.park || '').toLowerCase();
-            if (parkA !== parkB) {
-                return parkA.localeCompare(parkB);
+            const statusA = (a.status || '').toLowerCase();
+            const statusB = (b.status || '').toLowerCase();
+            const isHikedA = statusA === 'hiked';
+            const isHikedB = statusB === 'hiked';
+            
+            // Separate hiked from unhiked - hiked comes first
+            if (isHikedA !== isHikedB) {
+                return isHikedB ? 1 : -1; // If B is hiked, A comes first (hiked first)
             }
-            return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+            
+            // Both have same status
+            if (isHikedA && isHikedB) {
+                // Both hiked - sort by date (most recent first), then by name
+                const dateA = a.dateHiked || a.date_hiked || '';
+                const dateB = b.dateHiked || b.date_hiked || '';
+                
+                if (dateA && dateB) {
+                    // Both have dates - most recent first
+                    const dateCompare = new Date(dateB).getTime() - new Date(dateA).getTime();
+                    if (dateCompare !== 0) {
+                        return dateCompare;
+                    }
+                } else if (dateA && !dateB) {
+                    return -1; // A has date, B doesn't - A comes first
+                } else if (!dateA && dateB) {
+                    return 1; // B has date, A doesn't - B comes first
+                }
+                
+                // Same date or neither has date - sort by name
+                return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+            } else {
+                // Both unhiked - sort by name
+                return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+            }
         });
         
         trailList.innerHTML = filteredTrails.map(trail => `
@@ -2275,6 +2315,32 @@ class TrailBlogger {
         // Reset header button to "Add Trail"
     }
     
+    selectDefaultTrail() {
+        // Find Bison Way trail (most recent hike)
+        const bisonWayTrail = this.trails.find(t => 
+            t.name && t.name.toLowerCase().includes('bison way')
+        );
+        
+        if (bisonWayTrail) {
+            console.log('Selecting default trail: Bison Way');
+            this.selectTrail(bisonWayTrail.name);
+        } else {
+            // If Bison Way not found, select the most recent hiked trail
+            const hikedTrails = this.trails.filter(t => (t.status || '').toLowerCase() === 'hiked' && (t.dateHiked || t.date_hiked));
+            if (hikedTrails.length > 0) {
+                // Sort by date (most recent first)
+                hikedTrails.sort((a, b) => {
+                    const dateA = a.dateHiked || a.date_hiked || '';
+                    const dateB = b.dateHiked || b.date_hiked || '';
+                    return new Date(dateB).getTime() - new Date(dateA).getTime();
+                });
+                const mostRecent = hikedTrails[0];
+                console.log('Bison Way not found, selecting most recent hike:', mostRecent.name);
+                this.selectTrail(mostRecent.name);
+            }
+        }
+    }
+    
     zoomToTrail(trailName) {
         const trail = this.trails.find(t => t.name === trailName);
         if (!trail || !trail.coordinates || trail.coordinates.length === 0) {
@@ -2304,7 +2370,7 @@ class TrailBlogger {
             duration: 1.5
         });
         
-        // Highlight the trail with purple
+        // Highlight the trail with matching trail card color
         this.highlightTrail(trailName);
         
         // Show trail description
@@ -2323,11 +2389,14 @@ class TrailBlogger {
                         opacity: layer.options.opacity
                     };
                     
-                    // Apply highlight style with purple color and increased weight
+                    // Apply highlight style matching trail card colors
+                    // Blue (#007cbf) for hiked, Yellow (#ffc107) for unhiked
+                    const status = (layer.feature.properties.status || 'unhiked').toLowerCase();
+                    const color = status === 'hiked' ? '#007cbf' : '#ffc107';
                     layer.setStyle({
-                        color: '#8B5CF6', // Purple
-                        weight: 8,
-                        opacity: 1,
+                        color: color, // Match trail card color
+                        weight: 6, // Slightly thicker when selected
+                        opacity: 1.0, // Full opacity when selected
                         fillOpacity: 0.2
                     });
                     
@@ -2346,9 +2415,11 @@ class TrailBlogger {
                 layer.getElement()?.classList.remove('trail-highlighted');
                 
                 // Always reset to default style based on status
-                const status = layer.feature.properties.status;
+                const status = (layer.feature.properties.status || 'unhiked').toLowerCase();
+                // Match trail card colors: blue (#007cbf) for hiked, yellow (#ffc107) for unhiked
+                const color = status === 'hiked' ? '#007cbf' : '#ffc107';
                 layer.setStyle({
-                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
+                    color: color,
                     weight: 4,
                     opacity: 0.8
                 });
@@ -2616,6 +2687,11 @@ class TrailBlogger {
                         this.renderTrailList();
                         this.updateStatistics();
                         
+                        // Auto-select Bison Way trail (most recent hike) on load
+                        setTimeout(() => {
+                            this.selectDefaultTrail();
+                        }, 1500);
+                        
                         // Dispatch event for mobile interface
                         window.dispatchEvent(new CustomEvent('trailsLoaded', { detail: { trails: this.trails } }));
                         console.log('Dispatched trailsLoaded event');
@@ -2629,28 +2705,55 @@ class TrailBlogger {
                 }
             }
             
-            // Local mode: First, try to load from localStorage
-            const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
-            
-            // If no local trails, load shared trails
-            if (trails.length === 0) {
-                try {
-                    const response = await fetch('data/shared_trails.json');
-                    if (response.ok) {
-                        const sharedData = await response.json();
-                        this.trails = sharedData.trails || [];
-                        console.log(`Loaded ${this.trails.length} shared trails:`, this.trails.map(t => t.name));
-                        
-                        // Save shared trails to localStorage for future use
-                        localStorage.setItem('trailBlogger_trails', JSON.stringify(this.trails));
-                    }
-                } catch (sharedError) {
-                    console.log('No shared trails found, starting with empty trail list');
-                    this.trails = [];
+            // Local mode: ALWAYS load from trails.geojson first (file is authoritative source)
+            // This ensures we get the latest descriptions and data from the file
+            try {
+                const response = await fetch('data/trails.geojson?t=' + Date.now()); // Cache bust
+                if (response.ok) {
+                    const geojsonData = await response.json();
+                    // Convert GeoJSON features to trail format
+                    this.trails = this.convertGeoJSONToTrails(geojsonData);
+                    console.log(`✅ Loaded ${this.trails.length} trails from trails.geojson (local mode)`);
+                    
+                    // Count trails with descriptions
+                    const trailsWithDesc = this.trails.filter(t => 
+                        (t.description && t.description.trim()) || 
+                        (t.blogPost && t.blogPost.trim()) || 
+                        (t.blog_post && t.blog_post.trim())
+                    );
+                    console.log(`   ${trailsWithDesc.length} trails have descriptions`);
+                    
+                    // ALWAYS update localStorage with the file data (file is authoritative)
+                    localStorage.setItem('trailBlogger_trails', JSON.stringify(this.trails));
+                    localStorage.setItem('trailBlogger_geojson', JSON.stringify(geojsonData));
+                    console.log('   ✅ Updated localStorage with file data');
+                } else {
+                    throw new Error('Failed to fetch trails.geojson');
                 }
-            } else {
-                this.trails = trails;
-                console.log(`Loaded ${trails.length} trails from localStorage:`, trails.map(t => t.name));
+            } catch (fileError) {
+                console.warn('⚠️ Could not load from trails.geojson, trying localStorage:', fileError);
+                // Fallback to localStorage ONLY if file load fails
+                const trails = JSON.parse(localStorage.getItem('trailBlogger_trails') || '[]');
+                
+                if (trails.length === 0) {
+                    // Try shared trails as last resort
+                    try {
+                        const response = await fetch('data/shared_trails.json');
+                        if (response.ok) {
+                            const sharedData = await response.json();
+                            this.trails = sharedData.trails || [];
+                            console.log(`Loaded ${this.trails.length} shared trails:`, this.trails.map(t => t.name));
+                            localStorage.setItem('trailBlogger_trails', JSON.stringify(this.trails));
+                        }
+                    } catch (sharedError) {
+                        console.log('No shared trails found, starting with empty trail list');
+                        this.trails = [];
+                    }
+                } else {
+                    this.trails = trails;
+                    console.log(`⚠️ Loaded ${trails.length} trails from localStorage (file load failed)`);
+                    console.warn('   Note: Descriptions may be outdated if file has newer data');
+                }
             }
             
             // Log details about loaded data
@@ -2674,6 +2777,9 @@ class TrailBlogger {
             
             // Update the map with loaded trails
             this.updateMapTrails();
+            
+            // Auto-select Bison Way trail (most recent hike) on load
+            this.selectDefaultTrail();
             
             // Dispatch event for mobile interface
             if (this.trails.length > 0) {
@@ -2734,9 +2840,11 @@ class TrailBlogger {
         // Add updated trail overlay
         this.trailOverlay = L.geoJSON(geojsonData, {
             style: (feature) => {
-                const status = feature.properties.status;
+                const status = (feature.properties.status || 'unhiked').toLowerCase();
+                // Match trail card colors: blue (#007cbf) for hiked, yellow (#ffc107) for unhiked
+                const color = status === 'hiked' ? '#007cbf' : '#ffc107';
                 return {
-                    color: status === 'hiked' ? '#007cbf' : '#ffc107',
+                    color: color,
                     weight: 4,
                     opacity: 0.8
                 };

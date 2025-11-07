@@ -395,14 +395,44 @@ function populateMobileTrails() {
     let trails = [...window.app.trails]; // Copy array
     console.log(`Found ${trails.length} trails to populate`);
     
-    // Sort by park name, then by trail name
+    // Sort: Hiked trails first (most recent at top), then unhiked at bottom
+    // Within hiked: sort by date (most recent first), then by name
+    // Within unhiked: sort by name
     trails.sort((a, b) => {
-        const parkA = (a.park || '').toLowerCase();
-        const parkB = (b.park || '').toLowerCase();
-        if (parkA !== parkB) {
-            return parkA.localeCompare(parkB);
+        const statusA = (a.status || '').toLowerCase();
+        const statusB = (b.status || '').toLowerCase();
+        const isHikedA = statusA === 'hiked';
+        const isHikedB = statusB === 'hiked';
+        
+        // Separate hiked from unhiked - hiked comes first
+        if (isHikedA !== isHikedB) {
+            return isHikedB ? 1 : -1; // If B is hiked, A comes first (hiked first)
         }
-        return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+        
+        // Both have same status
+        if (isHikedA && isHikedB) {
+            // Both hiked - sort by date (most recent first), then by name
+            const dateA = a.dateHiked || a.date_hiked || '';
+            const dateB = b.dateHiked || b.date_hiked || '';
+            
+            if (dateA && dateB) {
+                // Both have dates - most recent first
+                const dateCompare = new Date(dateB).getTime() - new Date(dateA).getTime();
+                if (dateCompare !== 0) {
+                    return dateCompare;
+                }
+            } else if (dateA && !dateB) {
+                return -1; // A has date, B doesn't - A comes first
+            } else if (!dateA && dateB) {
+                return 1; // B has date, A doesn't - B comes first
+            }
+            
+            // Same date or neither has date - sort by name
+            return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+        } else {
+            // Both unhiked - sort by name
+            return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+        }
     });
     
     const container = document.getElementById('mobileTrailScroll');
@@ -422,32 +452,39 @@ function populateMobileTrails() {
         return;
     }
     
-    // Group by park for better organization
-    const trailsByPark = {};
-    trails.forEach(trail => {
-        const park = trail.park || 'Other';
-        if (!trailsByPark[park]) {
-            trailsByPark[park] = [];
+    // Don't group by park - show all trails in sorted order
+    // Hiked trails first (most recent at top), then unhiked at bottom
+    console.log('Creating trail cards in sorted order...');
+    
+    // Separate hiked and unhiked (already sorted by date)
+    const hikedTrails = trails.filter(t => (t.status || '').toLowerCase() === 'hiked');
+    const unhikedTrails = trails.filter(t => (t.status || '').toLowerCase() !== 'hiked');
+    
+    // Create cards for hiked trails (most recent first)
+    hikedTrails.forEach((trail, index) => {
+        const card = createMobileTrailCard(trail);
+        container.appendChild(card);
+        if (index < 2) {
+            console.log(`Hiked card appended: ${trail.name}`);
         }
-        trailsByPark[park].push(trail);
     });
     
-    console.log('Creating trail cards grouped by park...');
-    Object.keys(trailsByPark).sort().forEach(park => {
-        // Add park header
-        const parkHeader = document.createElement('div');
-        parkHeader.className = 'mobile-park-header';
-        parkHeader.textContent = park;
-        container.appendChild(parkHeader);
-        
-        // Add trails for this park
-        trailsByPark[park].forEach((trail, index) => {
-            const card = createMobileTrailCard(trail);
-            container.appendChild(card);
-            if (index < 2) {
-                console.log(`Card appended: ${trail.name} (${park})`);
-            }
-        });
+    // Add separator if we have both hiked and unhiked
+    if (hikedTrails.length > 0 && unhikedTrails.length > 0) {
+        const separator = document.createElement('div');
+        separator.className = 'mobile-park-header';
+        separator.textContent = 'To Do';
+        separator.style.marginTop = '1rem';
+        container.appendChild(separator);
+    }
+    
+    // Create cards for unhiked trails
+    unhikedTrails.forEach((trail, index) => {
+        const card = createMobileTrailCard(trail);
+        container.appendChild(card);
+        if (index < 2) {
+            console.log(`Unhiked card appended: ${trail.name}`);
+        }
     });
     
     // Log status counts for debugging
@@ -777,7 +814,7 @@ function filterMobileTrails(filter) {
     console.log(`Filtering trails by: ${filter}`);
     const cards = document.querySelectorAll('.mobile-trail-card');
     const parkHeaders = document.querySelectorAll('.mobile-park-header');
-    console.log(`Found ${cards.length} cards and ${parkHeaders.length} park headers to filter`);
+    console.log(`Found ${cards.length} cards and ${parkHeaders.length} headers to filter`);
     
     const container = document.getElementById('mobileTrailScroll');
     
@@ -788,38 +825,41 @@ function filterMobileTrails(filter) {
     }
     
     let visibleCount = 0;
-    
-    // Track which parks have visible trails
-    const parksWithVisibleTrails = new Set();
+    let shouldShowHeader = false;
     
     cards.forEach(card => {
         const status = card.dataset.status;
-        const park = card.dataset.park || '';
         
         if (filter === 'all') {
             card.style.display = 'block';
             visibleCount++;
-            if (park) parksWithVisibleTrails.add(park);
         } else if (filter === 'hiked' && status === 'hiked') {
             card.style.display = 'block';
             visibleCount++;
-            if (park) parksWithVisibleTrails.add(park);
+            shouldShowHeader = true;
         } else if (filter === 'unhiked' && status !== 'hiked') {
             card.style.display = 'block';
             visibleCount++;
-            if (park) parksWithVisibleTrails.add(park);
+            shouldShowHeader = true;
         } else {
             card.style.display = 'none';
         }
     });
     
-    // Show/hide park headers based on visible trails
+    // Show/hide "To Do" separator header based on filter
     parkHeaders.forEach(header => {
-        const parkName = header.textContent.trim();
-        if (parksWithVisibleTrails.has(parkName)) {
-            header.style.display = 'block';
-        } else {
-            header.style.display = 'none';
+        const headerText = header.textContent.trim();
+        // "To Do" header should only show when filtering "all" and we have both hiked and unhiked
+        if (headerText === 'To Do') {
+            if (filter === 'all') {
+                // Show if there are unhiked trails visible
+                const hasUnhikedVisible = Array.from(cards).some(card => 
+                    card.style.display !== 'none' && card.dataset.status !== 'hiked'
+                );
+                header.style.display = hasUnhikedVisible ? 'block' : 'none';
+            } else {
+                header.style.display = 'none';
+            }
         }
     });
     
