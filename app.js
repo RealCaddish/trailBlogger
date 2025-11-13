@@ -512,6 +512,7 @@ class TrailBlogger {
         
         // Modal controls
         document.getElementById('aboutBtn').addEventListener('click', () => this.showAboutModal());
+        document.getElementById('contactBtn').addEventListener('click', () => this.showContactModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
         document.getElementById('backupBtn').addEventListener('click', () => this.showDataManagement());
         
@@ -1093,6 +1094,39 @@ class TrailBlogger {
     
     showAboutModal() {
         document.getElementById('aboutModal').style.display = 'block';
+    }
+    
+    showContactModal() {
+        const modal = document.getElementById('contactModal');
+        modal.style.display = 'block';
+        
+        // Try to load contact photo with multiple extensions
+        const contactPhoto = document.getElementById('contactPhoto');
+        if (contactPhoto) {
+            const extensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
+            const basePath = 'data/images/contact_photo';
+            
+            // Reset attempt counter
+            contactPhoto.setAttribute('data-attempt', '0');
+            contactPhoto.style.display = 'block'; // Show in case it was hidden before
+            
+            // Set up error handler that tries next extension
+            contactPhoto.onerror = function() {
+                const currentAttempt = parseInt(this.getAttribute('data-attempt') || '0');
+                if (currentAttempt < extensions.length - 1) {
+                    const nextAttempt = currentAttempt + 1;
+                    this.setAttribute('data-attempt', nextAttempt.toString());
+                    this.src = `${basePath}.${extensions[nextAttempt]}`;
+                } else {
+                    // Hide image if all attempts fail
+                    this.style.display = 'none';
+                    this.onerror = null; // Remove handler to prevent infinite loop
+                }
+            };
+            
+            // Start loading from first extension
+            contactPhoto.src = `${basePath}.${extensions[0]}`;
+        }
     }
     
     showRestoreDialog() {
