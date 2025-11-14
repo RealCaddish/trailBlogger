@@ -210,8 +210,10 @@ class TrailBlogger {
     initializeMap() {
         try {
             console.log('Creating map...');
-            // Initialize the map
-            this.map = L.map('map').setView(
+            // Initialize the map without zoom control
+            this.map = L.map('map', {
+                zoomControl: false  // Disable default zoom buttons
+            }).setView(
                 this.parks[this.currentPark].center, 
                 this.parks[this.currentPark].zoom
             );
@@ -515,6 +517,13 @@ class TrailBlogger {
         document.getElementById('contactBtn').addEventListener('click', () => this.showContactModal());
         document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
         document.getElementById('backupBtn').addEventListener('click', () => this.showDataManagement());
+        
+        // Contact link from About modal (for mobile)
+        document.getElementById('contactLinkFromAbout').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.closeModals(); // Close About modal first
+            this.showContactModal(); // Open Contact modal
+        });
         
         // Close modals
         document.querySelectorAll('.close').forEach(closeBtn => {

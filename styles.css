@@ -92,6 +92,13 @@ body {
     text-decoration: none;
 }
 
+/* Hide mobile trails button on desktop - only hide when NOT on mobile */
+@media (min-width: 769px) {
+    .mobile-trails-fab {
+        display: none !important;
+    }
+}
+
 .btn-primary {
     background: linear-gradient(135deg, #e94560 0%, #d63384 100%);
     color: white;
@@ -844,9 +851,10 @@ body {
         box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
     }
     
-    /* Hide editing buttons on mobile */
+    /* Hide editing and contact buttons on mobile */
     #importBtn,
-    #backupBtn {
+    #backupBtn,
+    #contactBtn {
         display: none !important;
     }
     
@@ -863,6 +871,21 @@ body {
         justify-content: space-between;
         align-items: center;
         min-height: 52px;
+    }
+    
+    .logo-container {
+        flex: 0 0 auto;
+    }
+    
+    .logo {
+        height: 36px !important; /* Smaller logo on mobile */
+    }
+    
+    .logo-container h1 {
+        font-size: 1.1rem !important;
+        color: #2c5530 !important;
+        font-weight: 700 !important;
+        text-shadow: none !important;
     }
     
     .site-title {
@@ -952,30 +975,44 @@ body {
     /* Trails button - Now part of header-controls flex container */
     .mobile-trails-fab {
         position: relative !important;
-        width: 36px !important;
-        height: 32px !important;
+        padding: 0.35rem 0.6rem !important;
+        min-width: auto !important;
+        max-height: 32px !important;
         background: #28a745 !important;
         border-radius: 6px !important;
         box-shadow: none !important;
-        display: flex !important;
+        display: inline-flex !important;
         visibility: visible !important;
         opacity: 1 !important;
         align-items: center !important;
         justify-content: center !important;
         color: white !important;
-        font-size: 1rem !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
         cursor: pointer !important;
         transition: all 0.2s ease !important;
         border: 1px solid #28a745 !important;
         backdrop-filter: none !important;
         flex-shrink: 0 !important;
         margin: 0 !important;
+        gap: 0.25rem !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+    }
+    
+    .mobile-trails-fab i {
+        flex-shrink: 0 !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .mobile-trails-fab:hover {
+        background: #218838 !important;
+        border-color: #1e7e34 !important;
     }
     
     .mobile-trails-fab:active {
         transform: scale(0.95);
-        background: #218838 !important;
-        border-color: #1e7e34 !important;
+        background: #1e7e34 !important;
     }
     
     .mobile-trails-fab.hidden {

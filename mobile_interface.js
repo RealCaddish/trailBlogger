@@ -108,9 +108,9 @@ function createFloatingActionButton() {
     }
     
     fab = document.createElement('button');
-    fab.className = 'mobile-trails-fab';
+    fab.className = 'mobile-trails-fab btn';
     fab.id = 'mobileTrailsFab';
-    fab.innerHTML = '<i class="fas fa-list"></i>';
+    fab.innerHTML = '<i class="fas fa-list"></i> Trails';
     fab.title = 'View Trails';
     fab.style.display = 'flex'; // Ensure it's visible
     fab.style.visibility = 'visible'; // Force visibility
@@ -620,12 +620,16 @@ function handleMobileTrailClick(trail) {
                 
                 // Strategy: Fit bounds with moderate bottom padding, then pan slightly
                 // This positions trail at top while keeping it fully visible
+                // For unhiked trails, zoom out more to show broader context
+                const isHiked = trail.status === 'hiked';
+                const maxZoomLevel = isHiked ? 13 : 11; // Lower zoom (more zoomed out) for unhiked trails
+                
                 if (window.app.map) {
                     // First, fit bounds with bottom padding to account for panel
                     if (window.app.map.flyToBounds && typeof window.app.map.flyToBounds === 'function') {
                         window.app.map.flyToBounds(bounds, {
                             padding: [topPadding, sidePadding, bottomPadding, sidePadding],
-                            maxZoom: 13,
+                            maxZoom: maxZoomLevel,
                             duration: 1.5,
                             easeLinearity: 0.5
                         });
@@ -643,7 +647,7 @@ function handleMobileTrailClick(trail) {
                         // Use fitBounds (immediate)
                         window.app.map.fitBounds(bounds, {
                             padding: [topPadding, sidePadding, bottomPadding, sidePadding],
-                            maxZoom: 13
+                            maxZoom: maxZoomLevel
                         });
                         
                         // Then pan slightly south to move trail UP on screen
@@ -661,7 +665,7 @@ function handleMobileTrailClick(trail) {
                         const shiftedCenter = [center.lat - southShift, center.lng]; // Subtract to go south
                         
                         const idealZoom = window.app.map.getBoundsZoom ? window.app.map.getBoundsZoom(bounds, false) : 12;
-                        const zoom = Math.min(Math.max(idealZoom - 2, 10), 12.5);
+                        const zoom = Math.min(Math.max(idealZoom - 2, 10), maxZoomLevel);
                         
                         window.app.map.flyTo(shiftedCenter, zoom, {
                             duration: 1.5,
@@ -760,17 +764,32 @@ function showMobileDetails(trail) {
         imagesContainer.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 2rem;">No photos available for this trail.</p>';
     }
     
-    // Reset to description tab when opening
+    // Handle tabs based on trail status
     const descTab = document.querySelector('.mobile-tab-btn[data-tab="description"]');
     const photosTab = document.querySelector('.mobile-tab-btn[data-tab="photos"]');
     const descContent = document.getElementById('mobileTabDescription');
     const photosContent = document.getElementById('mobileTabPhotos');
     
+    const isHiked = trail.status === 'hiked';
+    
     if (descTab && photosTab && descContent && photosContent) {
-        descTab.classList.add('active');
-        photosTab.classList.remove('active');
-        descContent.classList.add('active');
-        photosContent.classList.remove('active');
+        if (!isHiked) {
+            // For unhiked trails, hide description tab and show only photos
+            descTab.style.display = 'none';
+            descContent.style.display = 'none';
+            photosTab.classList.add('active');
+            descTab.classList.remove('active');
+            photosContent.classList.add('active');
+            descContent.classList.remove('active');
+        } else {
+            // For hiked trails, show both tabs and default to description
+            descTab.style.display = 'flex';
+            descContent.style.display = 'block';
+            descTab.classList.add('active');
+            photosTab.classList.remove('active');
+            descContent.classList.add('active');
+            photosContent.classList.remove('active');
+        }
     }
     
     // Show panel with animation (remove minimized if present)
