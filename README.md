@@ -80,6 +80,7 @@ trail-blogger/
 - **Backup**: Click the "Backup" button to download a complete backup of your data
 - **Restore**: Use the backup file to restore your data on a new machine
 - **Export**: Your data is automatically saved locally and persists between sessions
+- **Import OSM Trails**: Add hiking trails from OpenStreetMap as "unhiked" trails to plan future hikes
 
 ## Features
 
@@ -106,6 +107,55 @@ trail-blogger/
 - **Automatic saving** of all changes
 - **Backup system** for data protection
 - **Cross-session persistence** (data survives browser restarts)
+
+## Importing OpenStreetMap Trails
+
+### Overview
+You can import hiking trails from OpenStreetMap (OSM) to populate your map with "unhiked" trails. This is perfect for discovering new trails in your region and planning future hikes.
+
+### Quick Start
+1. **Export trails from QGIS** using the QuickOSM plugin
+2. **Run the import script** to convert OSM data to Trail Blogger format
+3. **View trails** on your map as yellow (unhiked) markers
+
+### Detailed Guides
+- **Complete Guide**: See `docs/OSM_IMPORT_GUIDE.md` for full step-by-step instructions
+- **Quick Reference**: See `docs/OSM_QUICK_REFERENCE.md` for commands and queries
+- **Query Examples**: See `docs/OSM_QUERY_EXAMPLES.md` for QGIS query configurations
+- **Workflow Diagram**: See `docs/OSM_WORKFLOW_DIAGRAM.md` for visual workflow
+
+### Basic Workflow
+
+1. **In QGIS with QuickOSM**:
+   ```
+   Key: highway
+   Value: path,footway,track
+   In: [Your state/region]
+   Export as: GeoJSON (EPSG:4326)
+   ```
+
+2. **Run Import Script**:
+   ```bash
+   # Preview first
+   python scripts/import_osm_trails.py data/kentucky_osm_trails.geojson --state "Kentucky"
+   
+   # Then merge
+   python scripts/import_osm_trails.py data/kentucky_osm_trails.geojson --state "Kentucky" --merge
+   ```
+
+3. **View in Browser**:
+   - Refresh page (Ctrl+F5)
+   - Click "Show Unhiked" filter
+   - Yellow trails = OSM imports!
+
+### Supported States/Regions
+The import system works for any geographic region. Example guides provided for:
+- Kentucky
+- Tennessee
+- North Carolina
+- Colorado
+
+See documentation for querying trails in your specific region.
 
 ## Configuration
 
