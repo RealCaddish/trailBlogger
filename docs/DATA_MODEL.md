@@ -16,7 +16,9 @@ six decimals, with elevation as a third value when the GPS had it.
 | `elevation_gain_ft` | number or null | cumulative ascent with a 3 m hysteresis filter |
 | `country`, `state`, `park`, `park_type` | string or null | computed by point-in-polygon at import time |
 | `journal` | string | light Markdown |
-| `photos` | array | `{ src, taken?, lat?, lon? }`, `src` is relative to `data/trail_images/` |
+| `photos` | array | `{ src, taken?, lat?, lon?, located_by? }`, `src` is relative to `data/trail_images/`; `lat`/`lon` come from EXIF GPS, or from the track by time (`located_by: "time"`) when the track has `times` |
+| `weather` | object or null | `{ code, tmax, tmin, precip_in, wind_mph, source }` for the hike date, from Open-Meteo; `code` is a WMO weather code |
+| `start_time`, `times` | ISO datetime, array of ints | only for recorded or timed GPX tracks: seconds since `start_time` for each coordinate |
 | `companions` | array of strings | |
 | `tags` | array of strings | reserved |
 | `osm_ids` | array of strings | OpenStreetMap ways this hike covers (removed from the wishlist) |
@@ -29,7 +31,9 @@ Loop entries).
 ## `data/wishlist.geojson`
 
 One feature per trail to do. Geometry is simplified (about 8 m tolerance),
-2D, five decimals.
+2D, five decimals. It is a `LineString`, or a `MultiLineString` when the
+trail is an OpenStreetMap relation whose pieces do not connect end to end
+(joining them would draw straight lines across the map).
 
 | property | type | notes |
 |---|---|---|

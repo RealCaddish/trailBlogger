@@ -36,16 +36,6 @@ def load(path):
         return json.load(f)
 
 
-def line_coords(geom):
-    if not geom:
-        return []
-    if geom["type"] == "LineString":
-        return geom["coordinates"]
-    if geom["type"] == "MultiLineString":
-        return [c for part in geom["coordinates"] for c in part]
-    return []
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="+", help="GeoJSON exports from QGIS/QuickOSM")
@@ -58,7 +48,7 @@ def main():
     existing_ids = {f["properties"]["id"] for f in wishlist["features"]}
     hike_corridors = [(geo.bbox(f["geometry"]["coordinates"]), geo.make_corridor(f["geometry"]["coordinates"]), f["properties"]["name"])
                       for f in hikes["features"]]
-    wish_corridors = [(geo.bbox(f["geometry"]["coordinates"]), geo.make_corridor(f["geometry"]["coordinates"]), f["properties"]["name"])
+    wish_corridors = [(geo.bbox(geo.flatten(geo.parts_of(f["geometry"]))), geo.make_corridor(geo.parts_of(f["geometry"])), f["properties"]["name"])
                       for f in wishlist["features"]]
     loc = geo.locator()
 
@@ -72,10 +62,12 @@ def main():
             if not name:
                 skipped["no name"] += 1
                 continue
-            coords = line_coords(feat.get("geometry"))
+            # OSM relations come as several ways: join the ones that touch, keep real gaps apart.
+            parts = geo.merge_parts(geo.parts_of(feat.get("geometry")))
+            coords = geo.flatten(parts)
             if len(coords) < 2:
                 continue
-            length = geo.track_length_mi(coords)
+            length = geo.geom_length_mi(parts)
             if length < args.min_miles:
                 skipped["short"] += 1
                 continue
@@ -98,7 +90,6 @@ def main():
                 continue
 
             where = loc.locate(coords)
-            simplified = geo.round_coords(geo.simplify_coords(coords), places=5, keep_z=False)
             feature = {
                 "type": "Feature",
                 "properties": {
@@ -115,11 +106,11 @@ def main():
                     "osm_ids": [],
                     "created_at": datetime.now().isoformat(timespec="seconds"),
                 },
-                "geometry": {"type": "LineString", "coordinates": simplified},
+                "geometry": geo.to_geometry(parts),
             }
             added.append(feature)
             existing_ids.add(fid)
-            wish_corridors.append((box, geo.make_corridor(coords), name))
+            wish_corridors.append((box, geo.make_corridor(parts), name))
 
     print(f"Would add {len(added)} trails; skipped: {skipped}")
     by_region = {}

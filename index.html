@@ -28,6 +28,10 @@
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16l5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/></symbol>
       <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
     </defs>
   </svg>
@@ -51,6 +55,7 @@
     <div class="menu" id="menu" hidden>
       <button data-menu="about">About this site</button>
       <button data-menu="contact">Contact</button>
+      <button data-menu="github">Publish from this device…</button>
       <span class="menu-note" id="menuMode">Read-only</span>
     </div>
   </header>
@@ -102,6 +107,7 @@
         <h2 class="detail-name" id="dName"></h2>
         <div class="chips" id="dMeta"></div>
         <div class="companions" id="dCompanions"></div>
+        <div class="weather" id="dWeather" hidden></div>
         <div class="journal" id="dJournal"></div>
         <div class="photos" id="dPhotos"></div>
       </div>
@@ -201,6 +207,26 @@
       <p>I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.</p>
       <p class="big"><a href="mailto:nathanielmakesmaps@gmail.com">nathanielmakesmaps@gmail.com</a></p>
       <p class="links"><a href="https://nathanieldeaton.com" target="_blank" rel="noopener">Portfolio</a> · <a href="https://github.com/RealCaddish" target="_blank" rel="noopener">GitHub</a></p>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="github">
+    <div class="dlg-body prose">
+      <div class="dlg-head"><h2>Publish from this device</h2><button class="btn btn-ghost btn-icon" data-close><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <p>With a GitHub token, this device saves hikes straight into the repository. No local server is needed, and the live site rebuilds itself a minute or two after each save. Recording, photos and the journal all work from the trail.</p>
+      <ol>
+        <li>On GitHub: Settings › Developer settings › Personal access tokens › <b>Fine-grained tokens</b> › Generate new token.</li>
+        <li>Repository access: <b>only trailBlogger</b>. Permissions: <b>Contents: Read and write</b>. Pick an expiry you are comfortable with.</li>
+        <li>Paste it below. It is stored only in this browser, and you can forget it here any time.</li>
+      </ol>
+      <label class="field">Token<input type="password" id="ghToken" autocomplete="off" placeholder="github_pat_…"></label>
+      <p class="hint small" id="ghStatus"></p>
+      <div class="dlg-foot">
+        <button class="btn btn-ghost btn-danger" id="ghForget" hidden>Forget token</button>
+        <span class="grow"></span>
+        <button class="btn btn-ghost" data-close>Close</button>
+        <button class="btn btn-primary" id="ghSave">Connect</button>
+      </div>
     </div>
   </dialog>
 

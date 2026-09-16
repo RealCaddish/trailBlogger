@@ -11,7 +11,8 @@ import os
 from functools import lru_cache
 
 import shapely
-from shapely.geometry import LineString, Point, shape
+from shapely.geometry import LineString, MultiLineString, Point, shape
+from shapely.ops import linemerge
 from shapely.strtree import STRtree
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +85,79 @@ def simplify_coords(coords, tolerance_deg=0.00007):
 
 
 # --------------------------------------------------------------------------
+# Multi-part trails (OSM relations are several ways; joining them end to end
+# draws straight lines across the map, so parts are kept apart unless they touch)
+# --------------------------------------------------------------------------
+
+def parts_of(geom):
+    """Coordinate parts of a LineString or MultiLineString geometry dict."""
+    if not geom:
+        return []
+    if geom["type"] == "LineString":
+        return [geom["coordinates"]]
+    if geom["type"] == "MultiLineString":
+        return [p for p in geom["coordinates"] if len(p) >= 2]
+    return []
+
+
+def is_parts(x):
+    """True when x is a list of parts rather than a flat coordinate list."""
+    return bool(x) and isinstance(x[0], (list, tuple)) and bool(x[0]) and isinstance(x[0][0], (list, tuple))
+
+
+def flatten(parts):
+    return [c for part in parts for c in part]
+
+
+def geom_length_mi(parts):
+    return round(sum(track_length_mi(p) for p in parts if len(p) >= 2), 2)
+
+
+def merge_parts(parts, tolerance_m=25.0):
+    """Join parts whose ends meet (shared OSM nodes, or within tolerance_m);
+    keep genuinely separate pieces as separate parts."""
+    lines = [LineString([c[:2] for c in p]) for p in parts if len(p) >= 2]
+    if not lines:
+        return []
+    merged = linemerge(MultiLineString(lines)) if len(lines) > 1 else lines[0]
+    chains = [[list(c) for c in g.coords] for g in ([merged] if merged.geom_type == "LineString" else merged.geoms)]
+
+    # Second pass: greedy join of near-touching ends that linemerge (exact match only) missed.
+    out = []
+    remaining = chains[:]
+    while remaining:
+        chain = remaining.pop(0)
+        grew = True
+        while grew and remaining:
+            grew = False
+            for i, other in enumerate(remaining):
+                if haversine_m(chain[-1], other[0]) <= tolerance_m:
+                    chain = chain + other[1:]
+                elif haversine_m(chain[-1], other[-1]) <= tolerance_m:
+                    chain = chain + other[::-1][1:]
+                elif haversine_m(chain[0], other[-1]) <= tolerance_m:
+                    chain = other[:-1] + chain
+                elif haversine_m(chain[0], other[0]) <= tolerance_m:
+                    chain = other[::-1][:-1] + chain
+                else:
+                    continue
+                remaining.pop(i)
+                grew = True
+                break
+        out.append(chain)
+    return out
+
+
+def to_geometry(parts, places=5):
+    """LineString for one part, MultiLineString for several; simplified and rounded."""
+    simplified = [round_coords(simplify_coords(p), places=places, keep_z=False) for p in parts if len(p) >= 2]
+    simplified = [p for p in simplified if len(p) >= 2]
+    if len(simplified) == 1:
+        return {"type": "LineString", "coordinates": simplified[0]}
+    return {"type": "MultiLineString", "coordinates": simplified}
+
+
+# --------------------------------------------------------------------------
 # Overlap detection (for de-duplication)
 # --------------------------------------------------------------------------
 
@@ -99,20 +173,22 @@ def _to_local_meters(coords, lat0):
     return [(c[0] * k, c[1] * M_PER_DEG_LAT) for c in coords]
 
 
-def make_corridor(coords, threshold_m=40.0):
-    """Buffer a track into a corridor polygon (in a local metric frame).
-
-    Build this once per track and reuse it with fraction_within(); buffering
-    is the expensive part of overlap detection.
+def make_corridor(coords_or_parts, threshold_m=40.0):
+    """Buffer a track (flat coords, or a list of parts) into a corridor polygon
+    in a local metric frame. Build once per track and reuse with fraction_within().
     """
-    lat0 = coords[0][1]
-    line = LineString(_to_local_meters(coords, lat0))
-    return line.buffer(threshold_m), lat0
+    parts = coords_or_parts if is_parts(coords_or_parts) else [coords_or_parts]
+    lat0 = parts[0][0][1]
+    lines = [LineString(_to_local_meters(p, lat0)) for p in parts if len(p) >= 2]
+    geom = lines[0] if len(lines) == 1 else MultiLineString(lines)
+    return geom.buffer(threshold_m), lat0
 
 
 def fraction_within(a_coords, corridor, max_samples=250):
     """Fraction of A's vertices (sampled) that lie inside a corridor."""
     poly, lat0 = corridor
+    if is_parts(a_coords):
+        a_coords = flatten(a_coords)
     pts = _to_local_meters(_sample(a_coords, max_samples), lat0)
     xs = [p[0] for p in pts]
     ys = [p[1] for p in pts]

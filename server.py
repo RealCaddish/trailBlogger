@@ -98,8 +98,11 @@ def validate_collection(data):
         if not props.get("name"):
             return f"feature {fid} has no name"
         geom = f.get("geometry") or {}
-        if geom.get("type") != "LineString" or len(geom.get("coordinates") or []) < 2:
-            return f"feature {fid} needs a LineString with at least 2 points"
+        coords = geom.get("coordinates") or []
+        ok = (geom.get("type") == "LineString" and len(coords) >= 2) or (
+            geom.get("type") == "MultiLineString" and coords and all(len(p) >= 2 for p in coords))
+        if not ok:
+            return f"feature {fid} needs a LineString or MultiLineString with at least 2 points per part"
     return None
 
 

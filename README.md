@@ -33,13 +33,25 @@ When `server.py` is running, the same page turns on editing.
 ### Record a hike on your phone
 
 Open the site on your phone and tap **Record**. Keep the screen on. When you
-tap **Finish**:
+tap **Finish** the editor opens so you can name it, write the journal and add
+photos right away. Where it goes depends on how the device is set up:
 
-- on the public site, a GPX file is saved or shared, and you import it at home;
-- on your local server (same Wi-Fi, `http://<your-pc>:5000`), it opens the
-  editor so you can name it, write the journal and add photos right away.
+- **Publishing from the phone** (menu › *Publish from this device*): paste a
+  fine-grained GitHub token with *Contents: read and write* on this repo. Each
+  save becomes one commit and the live site rebuilds itself. The token stays in
+  that phone's browser only.
+- **Local server** on the same Wi-Fi (`http://<your-pc>:5000`): saves to disk.
+- **Neither**: a GPX file is saved or shared, and you import it at home.
 
 Add the site to your home screen for a full-screen app.
+
+### Photos on the map and the weather that day
+
+Photos keep their EXIF date and GPS position, and show up as pins on the
+track. Photos without GPS are placed by time when the track was recorded (or
+came from a timed GPX). The day's weather is looked up from Open-Meteo when a
+hike is saved; `python scripts/backfill_weather.py --write` fills it in for
+older hikes.
 
 ### Add or edit a hike at home
 

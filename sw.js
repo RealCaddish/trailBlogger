@@ -3,7 +3,7 @@
  * right away but the site still opens offline). Photos: cache first.
  * Map tiles are never cached here (too many, and the tile servers ask us not to).
  */
-const VERSION = 'tb-v2-1';
+const VERSION = 'tb-v2-2';
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './manifest.webmanifest',
   './logo/logo-96.png', './logo/logo-192.png',
