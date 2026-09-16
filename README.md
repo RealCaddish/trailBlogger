@@ -1,270 +1,88 @@
-# Trail Blogger - Personal Trail Journal
+# Trail Blogger
 
-A web-based application for tracking and documenting your hiking adventures. Create your personal trail journal with photos, descriptions, and trail data.
+A personal hiking journal that lives in a git repository. Every hike is a GPS
+track, a date, a journal entry and some photos. The site is static, works on a
+phone, and can record a track while you walk.
 
-## Quick Start
+Live site: https://realcaddish.github.io/trailBlogger/
 
-### Prerequisites
-- Python 3.7 or higher
-- Modern web browser (Chrome, Firefox, Safari, Edge)
+## How it fits together
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/trail-blogger.git
-   cd trail-blogger
-   ```
-
-2. **Start the application**
-   ```bash
-   python server.py
-   ```
-
-3. **Open your browser**
-   Navigate to `http://localhost:5000`
-
-## Sharing Your Adventures
-
-### How This Works
-- **Trail data and images are stored in the repository**
-- **When you push to GitHub, your trails and photos become publicly visible**
-- **Others can view your hiking adventures by visiting your repository**
-- **Fork the repo to create your own separate trail collection**
-
-### What's Shared
-
-#### **Public Repository (Shared)**
-- Application code and functionality
-- Your trail coordinates and routes
-- Your hiking photos and images
-- Journal entries and trail descriptions
-- Trail statistics and hiking history
-
-#### **Private (Not Shared)**
-- Backup files you create locally
-- Draft trails before you commit them
-- Browser localStorage (temporary data)
-
-### Data Storage Structure
 ```
-trail-blogger/
- app.js                 # Application logic
- index.html            # Main interface
- styles.css            # Styling
- server.py             # Local server
- data_manager.py       # Data handling
- data/                 # YOUR TRAIL DATA (shared in repo)
-    trails.geojson    # Your trail routes
-    trail_images/     # Your hiking photos
-    states.geojson    # Geographic data
-    parks_simplified.json  # Park boundaries
- scripts/              # Utility scripts
-    deploy.py         # Deploy to GitHub Pages
-    complete_backup.py    # Create backups
-    complete_restore.py   # Restore from backups
-    verify_deployment.py  # Verify deployments
- docs/                 # Documentation
- logo/                 # Application branding
+index.html, app.js, styles.css   the whole app, no build step
+sw.js, manifest.webmanifest      installable / offline (PWA)
+server.py                        local editing API (only on your machine)
+geo.py                           shared geo helpers (length, gain, park/state lookup, de-dupe)
+data/hikes.geojson               hikes you have done: full tracks, journal, photos
+data/wishlist.geojson            trails you want to do (simplified geometry)
+data/parks_visited.geojson       outlines of parks your hikes fall in
+data/us_states.geojson           state outlines (for the "states hiked" layer)
+data/parks_simplified.json       park polygons, used only by Python scripts
+data/trail_images/<hike id>/     photos, compressed on upload
+scripts/deploy.py                check, commit and push
+scripts/import_osm.py            add OpenStreetMap trails to the wishlist
+scripts/migrate_v2.py            one-time migration from the old trails.geojson
 ```
 
-## Setting Up Your Personal Data
+The browser loads about 1.5 MB of data in total. The public site never
+talks to a server; it reads the GeoJSON files straight from GitHub Pages.
+When `server.py` is running, the same page turns on editing.
 
-### First Time Setup
-1. **Create your data directory** (automatically created on first run)
-2. **Import your first trail** using the "Import Trail" button
-3. **Add photos and descriptions** to your trails
-4. **Create backups** using the "Backup" button
+## Day to day
 
-### Data Management
-- **Backup**: Click the "Backup" button to download a complete backup of your data
-- **Restore**: Use the backup file to restore your data on a new machine
-- **Export**: Your data is automatically saved locally and persists between sessions
-- **Import OSM Trails**: Add hiking trails from OpenStreetMap as "unhiked" trails to plan future hikes
+### Record a hike on your phone
 
-## Features
+Open the site on your phone and tap **Record**. Keep the screen on. When you
+tap **Finish**:
 
-### Trail Management
-- **Import GeoJSON files** from mapping applications
-- **Add trail details** (length, difficulty, status)
-- **Track hiking progress** (hiked vs. unhiked trails)
-- **Calculate trail statistics** automatically
+- on the public site, a GPX file is saved or shared, and you import it at home;
+- on your local server (same Wi-Fi, `http://<your-pc>:5000`), it opens the
+  editor so you can name it, write the journal and add photos right away.
 
-### Personal Journal
-- **Add photos** to each trail
-- **Write detailed descriptions** of your experiences
-- **Record hiking dates** and conditions
-- **Organize by difficulty** and status
+Add the site to your home screen for a full-screen app.
 
-### Map Integration
-- **Interactive map** with multiple basemap options
-- **Trail visualization** with color-coded status
-- **Zoom to trail** functionality
-- **Geographic data** preservation
+### Add or edit a hike at home
 
-### Data Persistence
-- **Local storage** ensures your data never leaves your machine
-- **Automatic saving** of all changes
-- **Backup system** for data protection
-- **Cross-session persistence** (data survives browser restarts)
-
-## Importing OpenStreetMap Trails
-
-### Overview
-You can import hiking trails from OpenStreetMap (OSM) to populate your map with "unhiked" trails. This is perfect for discovering new trails in your region and planning future hikes.
-
-### Quick Start
-1. **Export trails from QGIS** using the QuickOSM plugin
-2. **Run the import script** to convert OSM data to Trail Blogger format
-3. **View trails** on your map as yellow (unhiked) markers
-
-### Detailed Guides
-- **Complete Guide**: See `docs/OSM_IMPORT_GUIDE.md` for full step-by-step instructions
-- **Quick Reference**: See `docs/OSM_QUICK_REFERENCE.md` for commands and queries
-- **Query Examples**: See `docs/OSM_QUERY_EXAMPLES.md` for QGIS query configurations
-- **Workflow Diagram**: See `docs/OSM_WORKFLOW_DIAGRAM.md` for visual workflow
-
-### Basic Workflow
-
-1. **In QGIS with QuickOSM**:
-   ```
-   Key: highway
-   Value: path,footway,track
-   In: [Your state/region]
-   Export as: GeoJSON (EPSG:4326)
-   ```
-
-2. **Run Import Script**:
-   ```bash
-   # Preview first
-   python scripts/import_osm_trails.py data/kentucky_osm_trails.geojson --state "Kentucky"
-   
-   # Then merge
-   python scripts/import_osm_trails.py data/kentucky_osm_trails.geojson --state "Kentucky" --merge
-   ```
-
-3. **View in Browser**:
-   - Refresh page (Ctrl+F5)
-   - Click "Show Unhiked" filter
-   - Yellow trails = OSM imports!
-
-### Supported States/Regions
-The import system works for any geographic region. Example guides provided for:
-- Kentucky
-- Tennessee
-- North Carolina
-- Colorado
-
-See documentation for querying trails in your specific region.
-
-## Configuration
-
-### Customizing for Your Region
-Edit `app.js` to set your preferred default location:
-```javascript
-this.parks = {
-    'your-region': {
-        name: 'Your Region Name',
-        center: [latitude, longitude],
-        bounds: [
-            [southwest_lat, southwest_lng],
-            [northeast_lat, northeast_lng]
-        ],
-        zoom: 12
-    }
-};
+```
+pip install -r requirements.txt
+python server.py          # http://localhost:5000
 ```
 
-### Adding New Parks
-1. Add park configuration to the `parks` object
-2. Update the park selector in `index.html`
-3. Restart the application
+Click **Add hike**, drop a GPX, GeoJSON or KML file, and fill in the rest.
+Park, state and country are detected from the track. Photos are compressed
+to 1600 px, and their EXIF date and GPS position are kept alongside them.
+Everything is written to `data/hikes.geojson` and `data/trail_images/`.
 
-## Development
+Wishlist trails can be edited the same way, and **Mark hiked** turns one into
+a hike using its geometry.
 
-### Local Development
-```bash
-# Start development server
-python server.py
+### Publish
 
-# Access application
-http://localhost:5000
-
-# View API documentation
-http://localhost:5000/api/health
+```
+python scripts/deploy.py
 ```
 
-### File Structure
-```
- app.js              # Main application logic
- index.html          # User interface
- styles.css          # Styling and layout
- server.py           # Flask server for data persistence
- data_manager.py     # Data handling and file operations
- data/               # User data directory (created automatically)
- logo/               # Application branding
- README.md           # This file
-```
+It validates the data files, shows what changed, commits and pushes. GitHub
+Pages updates in a minute or two. Git history is the backup; `server.py` also
+keeps the last 20 versions of each file in `data/backups/` (ignored by git).
 
-## Privacy & Security Features
+### Add trails to the wishlist from OpenStreetMap
 
-### Data Protection
-- **Local-only storage**: All data stays on your machine
-- **No external dependencies**: No data sent to third-party services
-- **Secure file handling**: Path traversal protection
-- **Input validation**: XSS and injection protection
+See [docs/OSM_IMPORT.md](docs/OSM_IMPORT.md).
 
-### Backup & Recovery
-- **Automatic backups**: Create timestamped backups
-- **Export functionality**: Download complete data sets
-- **Data integrity**: Validation and error handling
-- **Recovery options**: Restore from backup files
+## Data model
 
-## Important Notes
+See [docs/DATA_MODEL.md](docs/DATA_MODEL.md). Short version: every feature has
+a stable `id` that never changes, hikes and wishlist are separate files, and
+location fields are computed once at import time.
 
-### Before Making Repository Public
-1. **Verify `.gitignore`** excludes all personal data
-2. **Remove any personal content** from the repository
-3. **Test with fresh clone** to ensure no data leaks
-4. **Update documentation** for new users
+## Journal formatting
 
-### Data Safety
-- **Regular backups**: Use the backup feature regularly
-- **Multiple copies**: Keep backups in different locations
-- **Version control**: Consider using git for your personal data directory
-- **Cloud storage**: Sync backups to cloud storage for additional safety
+Journal text is plain text with a little Markdown: blank lines separate
+paragraphs, `**bold**`, `*italic*`, and `[link text](https://...)`.
 
-## Contributing
+## Running your own
 
-### For Personal Use
-- Fork the repository for your own use
-- Customize features for your specific needs
-- Keep your personal data separate from the code
-
-### For Community
-- Submit bug reports and feature requests
-- Contribute code improvements
-- Share customizations and enhancements
-- Help improve documentation
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Support
-
-### Common Issues
-1. **Data not persisting**: Check browser localStorage settings
-2. **Images not loading**: Verify file permissions in data directory
-3. **Map not displaying**: Check internet connection for tile loading
-4. **Import errors**: Verify GeoJSON file format
-
-### Getting Help
-- Check the browser console for error messages
-- Verify all files are in the correct locations
-- Ensure Python dependencies are installed
-- Test with a fresh clone of the repository
-
----
-
-**Remember**: Your trail data, photos, and journal entries are yours alone. This application is designed to keep your personal information private and secure on your local machine. 
+Fork the repo, delete the contents of `data/hikes.geojson`,
+`data/wishlist.geojson` and `data/trail_images/`, update the About and Contact
+text in `index.html`, and enable GitHub Pages on the `main` branch.

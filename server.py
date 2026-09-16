@@ -1,333 +1,237 @@
 #!/usr/bin/env python3
-"""
-Trail Blogger Web Server
-Simple Flask server to handle trail data persistence
+"""Trail Blogger local editing server (v2).
+
+Run this on your own machine to add and edit hikes. The public site on
+GitHub Pages is the same HTML/JS served statically; it detects that this
+API is absent and runs read-only.
+
+    python server.py            ->  http://localhost:5000
+
+Data lives in plain files that you commit to git:
+    data/hikes.geojson          your hikes (tracks, journal, photos)
+    data/wishlist.geojson       trails you want to do
+    data/trail_images/<id>/     photos, compressed on upload
 """
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-import os
-import json
-from data_manager import TrailDataManager
-import logging
-from werkzeug.utils import secure_filename
-import uuid
-from PIL import Image, ImageOps
 import io
+import json
+import os
+import re
+import shutil
+import uuid
+from datetime import datetime
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from flask import Flask, abort, jsonify, request, send_from_directory
+from PIL import Image, ImageOps
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+import geo
 
-# Configuration for file uploads
-UPLOAD_FOLDER = 'data/trail_images'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB max file size
+ROOT = geo.ROOT
+DATA = geo.DATA_DIR
+PHOTOS = os.path.join(DATA, "trail_images")
+BACKUPS = os.path.join(DATA, "backups")
+COLLECTIONS = {"hikes", "wishlist"}
+ID_RE = re.compile(r"^[A-Za-z0-9_-]{4,64}$")
+PHOTO_MAX_EDGE = 1600
+PHOTO_QUALITY = 85
 
-# Ensure upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app = Flask(__name__, static_folder=None)
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024  # a phone's worth of photos
 
-# Initialize data manager
-data_manager = TrailDataManager()
 
-def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# --------------------------------------------------------------------------
+# Static site
+# --------------------------------------------------------------------------
 
-def compress_image(image_path, max_width=1200, quality=85):
-    """Compress image to reduce file size"""
-    try:
-        with Image.open(image_path) as img:
-            # Apply EXIF orientation to fix sideways images
-            img = ImageOps.exif_transpose(img)
-            
-            # Convert to RGB if necessary (for JPEG)
-            if img.mode in ('RGBA', 'LA', 'P'):
-                img = img.convert('RGB')
-            
-            # Resize if too large
-            if img.width > max_width:
-                ratio = max_width / img.width
-                new_height = int(img.height * ratio)
-                img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
-            
-            # Save with compression
-            img.save(image_path, 'JPEG', quality=quality, optimize=True)
-            return True
-    except Exception as e:
-        logger.error(f"Error compressing image: {e}")
-        return False
+def _no_cache(resp):
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
-@app.route('/')
+
+@app.route("/")
 def index():
-    """Serve the main application"""
-    response = send_from_directory('.', 'index.html')
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
+    return _no_cache(send_from_directory(ROOT, "index.html"))
 
-@app.route('/<path:filename>')
-def serve_static(filename):
-    """Serve static files"""
-    response = send_from_directory('.', filename)
-    
-    # Add cache control for static assets
-    if filename.endswith(('.js', '.css')):
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-    else:
-        # For other files, allow caching but with a short expiration
-        response.headers['Cache-Control'] = 'public, max-age=300'  # 5 minutes
-    
-    return response
 
-@app.route('/api/trails', methods=['GET'])
-def get_trails():
-    """Get all trails"""
+@app.route("/<path:filename>")
+def static_file(filename):
+    if filename.startswith(("api/", ".git")):
+        abort(404)
+    resp = send_from_directory(ROOT, filename)
+    if filename.endswith((".js", ".css", ".html", ".geojson", ".json", ".webmanifest")):
+        _no_cache(resp)
+    return resp
+
+
+# --------------------------------------------------------------------------
+# Collections
+# --------------------------------------------------------------------------
+
+def _path(name):
+    return os.path.join(DATA, f"{name}.geojson")
+
+
+def read_collection(name):
+    path = _path(name)
+    if not os.path.exists(path):
+        return {"type": "FeatureCollection", "schema": "trailblogger/v2", "features": []}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def validate_collection(data):
+    if not isinstance(data, dict) or data.get("type") != "FeatureCollection":
+        return "body must be a GeoJSON FeatureCollection"
+    feats = data.get("features")
+    if not isinstance(feats, list):
+        return "features must be a list"
+    seen = set()
+    for f in feats:
+        props = f.get("properties") or {}
+        fid = props.get("id")
+        if not fid or not ID_RE.match(str(fid)):
+            return f"feature is missing a valid id: {props.get('name')!r}"
+        if fid in seen:
+            return f"duplicate id {fid}"
+        seen.add(fid)
+        if not props.get("name"):
+            return f"feature {fid} has no name"
+        geom = f.get("geometry") or {}
+        if geom.get("type") != "LineString" or len(geom.get("coordinates") or []) < 2:
+            return f"feature {fid} needs a LineString with at least 2 points"
+    return None
+
+
+def write_collection(name, data):
+    path = _path(name)
+    os.makedirs(BACKUPS, exist_ok=True)
+    if os.path.exists(path):
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        shutil.copy2(path, os.path.join(BACKUPS, f"{name}_{stamp}.geojson"))
+        old = sorted(p for p in os.listdir(BACKUPS) if p.startswith(f"{name}_"))
+        for stale in old[:-20]:
+            os.remove(os.path.join(BACKUPS, stale))
+    data["schema"] = "trailblogger/v2"
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    os.replace(tmp, path)
+
+
+@app.route("/api/health")
+def health():
+    return jsonify({"ok": True, "version": 2, "editable": True})
+
+
+@app.route("/api/<name>", methods=["GET"])
+def get_collection(name):
+    if name not in COLLECTIONS:
+        abort(404)
+    return _no_cache(jsonify(read_collection(name)))
+
+
+@app.route("/api/<name>", methods=["PUT"])
+def put_collection(name):
+    if name not in COLLECTIONS:
+        abort(404)
+    data = request.get_json(force=True, silent=True)
+    err = validate_collection(data)
+    if err:
+        return jsonify({"error": err}), 400
+    write_collection(name, data)
+    return jsonify({"ok": True, "count": len(data["features"])})
+
+
+# --------------------------------------------------------------------------
+# Location + stats for a track (keeps the 12 MB parks file on this side)
+# --------------------------------------------------------------------------
+
+@app.route("/api/locate", methods=["POST"])
+def locate():
+    body = request.get_json(force=True, silent=True) or {}
+    coords = body.get("coordinates") or []
+    if len(coords) < 2:
+        return jsonify({"error": "coordinates required"}), 400
+    info = geo.locator().locate(coords)
+    info["length_mi"] = geo.track_length_mi(coords)
+    info["elevation_gain_ft"] = geo.elevation_gain_ft(coords)
+    return jsonify(info)
+
+
+# --------------------------------------------------------------------------
+# Photos
+# --------------------------------------------------------------------------
+
+def _dms_to_deg(dms, ref):
+    deg = float(dms[0]) + float(dms[1]) / 60 + float(dms[2]) / 3600
+    return -deg if ref in ("S", "W") else deg
+
+
+def read_exif(img):
+    """Return {taken, lat, lon} from EXIF, with None where absent."""
+    out = {"taken": None, "lat": None, "lon": None}
     try:
-        trails = data_manager.load_all_trails()
-        return jsonify(trails)
-    except Exception as e:
-        logger.error(f"Error getting trails: {e}")
-        return jsonify({"error": str(e)}), 500
+        exif = img.getexif()
+        sub = exif.get_ifd(0x8769)
+        raw = sub.get(36867) or exif.get(306)
+        if raw:
+            out["taken"] = datetime.strptime(str(raw)[:19], "%Y:%m:%d %H:%M:%S").isoformat()
+        gps = exif.get_ifd(0x8825)
+        if gps and 2 in gps and 4 in gps:
+            out["lat"] = round(_dms_to_deg(gps[2], gps.get(1, "N")), 6)
+            out["lon"] = round(_dms_to_deg(gps[4], gps.get(3, "E")), 6)
+    except Exception:
+        pass
+    return out
 
-@app.route('/api/trails', methods=['POST'])
-def save_trail():
-    """Save a trail"""
-    try:
-        trail_data = request.json
-        success = data_manager.save_trail(trail_data)
-        if success:
-            return jsonify({"message": "Trail saved successfully"}), 200
-        else:
-            return jsonify({"error": "Failed to save trail"}), 500
-    except Exception as e:
-        logger.error(f"Error saving trail: {e}")
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/trails/<trail_name>', methods=['GET'])
-def get_trail(trail_name):
-    """Get a specific trail by name"""
-    try:
-        trail = data_manager.get_trail_by_name(trail_name)
-        if trail:
-            return jsonify(trail)
-        else:
-            return jsonify({"error": "Trail not found"}), 404
-    except Exception as e:
-        logger.error(f"Error getting trail: {e}")
-        return jsonify({"error": str(e)}), 500
+def compress_to_jpeg(img):
+    img = ImageOps.exif_transpose(img)
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    img.thumbnail((PHOTO_MAX_EDGE, PHOTO_MAX_EDGE), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=PHOTO_QUALITY, optimize=True, progressive=True)
+    return buf.getvalue()
 
-@app.route('/api/trails/<trail_name>', methods=['DELETE'])
-def delete_trail(trail_name):
-    """Delete a trail"""
-    try:
-        success = data_manager.delete_trail(trail_name)
-        if success:
-            return jsonify({"message": "Trail deleted successfully"}), 200
-        else:
-            return jsonify({"error": "Trail not found"}), 404
-    except Exception as e:
-        logger.error(f"Error deleting trail: {e}")
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/statistics', methods=['GET'])
-def get_statistics():
-    """Get trail statistics"""
-    try:
-        stats = data_manager.get_statistics()
-        return jsonify(stats)
-    except Exception as e:
-        logger.error(f"Error getting statistics: {e}")
-        return jsonify({"error": str(e)}), 500
+@app.route("/api/photos/<hike_id>", methods=["POST"])
+def upload_photos(hike_id):
+    if not ID_RE.match(hike_id):
+        abort(400)
+    files = request.files.getlist("photos")
+    if not files:
+        return jsonify({"error": "no photos in request"}), 400
+    folder = os.path.join(PHOTOS, hike_id)
+    os.makedirs(folder, exist_ok=True)
+    saved = []
+    for f in files:
+        try:
+            img = Image.open(f.stream)
+        except Exception:
+            return jsonify({"error": f"{f.filename} is not an image"}), 400
+        meta = read_exif(img)
+        stem = os.path.splitext(secure_filename(f.filename) or "photo")[0][:40]
+        name = f"{stem}_{uuid.uuid4().hex[:8]}.jpg"
+        with open(os.path.join(folder, name), "wb") as out:
+            out.write(compress_to_jpeg(img))
+        saved.append({"src": f"{hike_id}/{name}", **meta})
+    return jsonify({"photos": saved})
 
-@app.route('/api/export', methods=['GET'])
-def export_data():
-    """Export all trail data"""
-    try:
-        export_file = data_manager.export_trail_data()
-        return send_from_directory(
-            data_manager.data_dir, 
-            os.path.basename(export_file),
-            as_attachment=True
-        )
-    except Exception as e:
-        logger.error(f"Error exporting data: {e}")
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/import', methods=['POST'])
-def import_data():
-    """Import trail data from file"""
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file provided"}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-        
-        # Save uploaded file temporarily
-        temp_file = os.path.join(data_manager.data_dir, 'temp_import.geojson')
-        file.save(temp_file)
-        
-        # Import the data
-        success = data_manager.import_trail_data(temp_file)
-        
-        # Clean up temp file
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
-        
-        if success:
-            return jsonify({"message": "Data imported successfully"}), 200
-        else:
-            return jsonify({"error": "Failed to import data"}), 500
-    except Exception as e:
-        logger.error(f"Error importing data: {e}")
-        return jsonify({"error": str(e)}), 500
+@app.route("/api/photos/<hike_id>/<filename>", methods=["DELETE"])
+def delete_photo(hike_id, filename):
+    if not ID_RE.match(hike_id) or filename != secure_filename(filename):
+        abort(400)
+    path = os.path.join(PHOTOS, hike_id, filename)
+    if os.path.exists(path):
+        os.remove(path)
+        return jsonify({"ok": True})
+    return jsonify({"error": "not found"}), 404
 
-@app.route('/api/trails/<trail_id>/images', methods=['POST', 'OPTIONS'])
-def upload_trail_images(trail_id):
-    """Upload images for a specific trail"""
-    # Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
-        response = jsonify({"status": "ok"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        return response, 200
-    
-    try:
-        if 'images' not in request.files:
-            return jsonify({"error": "No images provided"}), 400
-        
-        files = request.files.getlist('images')
-        if not files or files[0].filename == '':
-            return jsonify({"error": "No files selected"}), 400
-        
-        # Create trail-specific directory
-        trail_dir = os.path.join(UPLOAD_FOLDER, f'trail-{trail_id}')
-        os.makedirs(trail_dir, exist_ok=True)
-        
-        uploaded_files = []
-        
-        for file in files:
-            if file and allowed_file(file.filename):
-                # Generate unique filename
-                filename = secure_filename(file.filename)
-                name, ext = os.path.splitext(filename)
-                unique_filename = f"{name}_{uuid.uuid4().hex[:8]}{ext}"
-                file_path = os.path.join(trail_dir, unique_filename)
-                
-                # Check file size
-                file.seek(0, 2)  # Seek to end
-                file_size = file.tell()
-                file.seek(0)  # Reset to beginning
-                
-                if file_size > MAX_FILE_SIZE:
-                    return jsonify({"error": f"File {filename} is too large. Maximum size is 10MB."}), 400
-                
-                # Save file
-                file.save(file_path)
-                
-                # Compress image
-                if compress_image(file_path):
-                    uploaded_files.append({
-                        'filename': unique_filename,
-                        'original_name': filename,
-                        'size': os.path.getsize(file_path),
-                        'url': f'/api/trails/{trail_id}/images/{unique_filename}'
-                    })
-                else:
-                    # If compression fails, still keep the file
-                    uploaded_files.append({
-                        'filename': unique_filename,
-                        'original_name': filename,
-                        'size': os.path.getsize(file_path),
-                        'url': f'/api/trails/{trail_id}/images/{unique_filename}'
-                    })
-            else:
-                return jsonify({"error": f"File {file.filename} has an invalid extension"}), 400
-        
-        return jsonify({
-            "message": f"Successfully uploaded {len(uploaded_files)} images",
-            "images": uploaded_files
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error uploading images: {e}")
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/trails/<trail_id>/images/<filename>')
-def get_trail_image(trail_id, filename):
-    """Serve trail images"""
-    try:
-        trail_dir = os.path.join(UPLOAD_FOLDER, f'trail-{trail_id}')
-        return send_from_directory(trail_dir, filename)
-    except Exception as e:
-        logger.error(f"Error serving image: {e}")
-        return jsonify({"error": "Image not found"}), 404
-
-@app.route('/api/trails/<trail_id>/images', methods=['GET'])
-def get_trail_images(trail_id):
-    """Get all images for a specific trail"""
-    try:
-        trail_dir = os.path.join(UPLOAD_FOLDER, f'trail-{trail_id}')
-        
-        if not os.path.exists(trail_dir):
-            return jsonify({"images": []}), 200
-        
-        images = []
-        for filename in os.listdir(trail_dir):
-            if allowed_file(filename):
-                file_path = os.path.join(trail_dir, filename)
-                images.append({
-                    'filename': filename,
-                    'size': os.path.getsize(file_path),
-                    'url': f'/api/trails/{trail_id}/images/{filename}'
-                })
-        
-        return jsonify({"images": images}), 200
-        
-    except Exception as e:
-        logger.error(f"Error getting trail images: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/trails/<trail_id>/images/<filename>', methods=['DELETE'])
-def delete_trail_image(trail_id, filename):
-    """Delete a specific trail image"""
-    try:
-        trail_dir = os.path.join(UPLOAD_FOLDER, f'trail-{trail_id}')
-        file_path = os.path.join(trail_dir, filename)
-        
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            return jsonify({"message": "Image deleted successfully"}), 200
-        else:
-            return jsonify({"error": "Image not found"}), 404
-            
-    except Exception as e:
-        logger.error(f"Error deleting image: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({"status": "healthy", "message": "Trail Blogger API is running"})
-
-if __name__ == '__main__':
-    # Create data directory if it doesn't exist
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    
-    # Run the server
-    print("Starting Trail Blogger Server...")
-    print("Access the application at: http://localhost:5000")
-    print("API documentation available at: http://localhost:5000/api/health")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    os.makedirs(PHOTOS, exist_ok=True)
+    print("Trail Blogger editing server: http://localhost:5000")
+    app.run(host="127.0.0.1", port=5000, debug=False)

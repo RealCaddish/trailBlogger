@@ -1,468 +1,212 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Trail Blogger - Hiking Journal</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="styles.css?v=20241221">
-    
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2c5530">
+  <meta name="description" content="Nathaniel's hiking journal: GPS tracks, photos and notes from every trail.">
+  <title>Trail Blogger</title>
+  <link rel="icon" href="logo/logo-96.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo/logo-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo-container">
-                    <img src="logo/trailbloggerlibrary.png" alt="Trail Blogger" class="logo">
-                    <h1 id="homeBtn" title="Return to worldwide view">Trail Blogger</h1>
-                </div>
-                <div class="header-controls">
-                    <button id="contactBtn" class="btn btn-about" title="Contact">
-                        <i class="fas fa-envelope"></i> Contact
-                    </button>
-                    <button id="aboutBtn" class="btn btn-about" title="About Trail Blogger">
-                        <i class="fas fa-info-circle"></i> About
-                    </button>
-                    <button id="backupBtn" class="btn btn-secondary" title="Data Management">
-                        <i class="fas fa-database"></i> Data
-                    </button>
-                    <button id="importBtn" class="btn btn-primary">
-                        <i class="fas fa-plus-circle"></i> Add Trail
-                    </button>
-                </div>
-            </div>
-        </header>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z M3 13l9 5 9-5 M3 17l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4zM13 7l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 16l5-5 4 4 3-3 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Sidebar -->
-            <aside class="sidebar">
-                <div class="sidebar-section">
-                    <h3>Location Selection</h3>
-                    <div class="form-group">
-                        <label for="stateSearch">State:</label>
-                        <input type="text" id="stateSearch" class="form-input searchable" placeholder="Type to search states..." autocomplete="off">
-                        <datalist id="stateList">
-                            <!-- States will be populated here -->
-                        </datalist>
-                        <div id="stateDropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="parkSearch">Park:</label>
-                        <input type="text" id="parkSearch" class="form-input searchable" placeholder="Type to search parks..." autocomplete="off" disabled>
-                        <datalist id="parkList">
-                            <!-- Parks will be populated here -->
-                        </datalist>
-                        <div id="parkDropdown" class="autocomplete-dropdown"></div>
-                    </div>
-                </div>
+  <header class="topbar">
+    <a class="brand" href="#/" title="All hikes">
+      <img src="logo/logo-96.png" alt="" width="34" height="34">
+      <span>Trail Blogger</span>
+    </a>
+    <nav class="topbar-actions">
+      <a class="btn btn-ghost btn-record" href="#/record" title="Record a hike with your phone's GPS">
+        <svg class="icon rec"><use href="#i-record"/></svg><span>Record</span>
+      </a>
+      <button class="btn btn-primary only-editable" id="btnAdd" title="Add a hike from a GPX or GeoJSON file">
+        <svg class="icon"><use href="#i-plus"/></svg><span>Add hike</span>
+      </button>
+      <button class="btn btn-ghost btn-icon" id="btnMenu" title="Menu" aria-haspopup="true">
+        <svg class="icon"><use href="#i-menu"/></svg>
+      </button>
+    </nav>
+    <div class="menu" id="menu" hidden>
+      <button data-menu="about">About this site</button>
+      <button data-menu="contact">Contact</button>
+      <span class="menu-note" id="menuMode">Read-only</span>
+    </div>
+  </header>
 
-                <div class="sidebar-section">
-                    <h3>Trail List</h3>
-                    <div class="trail-filters">
-                        <button id="showAll" class="filter-btn active">All</button>
-                        <button id="showHiked" class="filter-btn">Hiked</button>
-                        <button id="showUnhiked" class="filter-btn">Unhiked</button>
-                    </div>
-                    <div id="trailList" class="trail-list">
-                        <!-- Trail items will be populated here -->
-                    </div>
-                </div>
+  <main class="stage" id="stage">
+    <div id="map" aria-label="Map of trails"></div>
 
-                <div class="sidebar-section">
-                    <h3>Statistics</h3>
-                    <div class="stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Total Trails:</span>
-                            <span id="totalTrails" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Hiked:</span>
-                            <span id="hikedTrails" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Total Miles:</span>
-                            <span id="totalMiles" class="stat-value">0</span>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Map Container -->
-            <main class="map-container">
-                <div id="map"></div>
-                
-                <!-- Map Controls -->
-                <div class="map-controls">
-                    <button id="toggleTrailOverlay" class="map-btn" title="Toggle Trail Overlay">
-                        <i class="fas fa-layer-group"></i>
-                    </button>
-                    <button id="fullscreenBtn" class="map-btn" title="Fullscreen">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                </div>
-            </main>
-
-            <!-- Description Panel -->
-            <aside class="description-panel" id="descriptionPanel">
-                <div class="description-header">
-                    <button class="close-description" id="closeDescription">&times;</button>
-                    <h2 id="descriptionTitle">Trail Details</h2>
-                    <div class="trail-meta" id="trailMeta">
-                        <span id="trailDifficulty">Difficulty</span>
-                        <span id="trailLengthDisplay">Length</span>
-                        <span id="trailStatus">Status</span>
-                    </div>
-                </div>
-                <div class="description-content">
-                    <div class="trail-description" id="trailDescription">
-                        <p>Select a trail to view its details and photos.</p>
-                    </div>
-                    
-                    <div class="trail-images" id="trailImagesSection">
-                        <h3>Photos</h3>
-                        <div class="image-gallery" id="imageGallery">
-                            <!-- Images will be populated here -->
-                        </div>
-                    </div>
-                </div>
-            </aside>
-        </div>
-        </div>
-
-        <!-- Trail Detail Modal -->
-        <div id="trailModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2 id="modalTitle">Trail Details</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="trailForm">
-                        <div class="form-group">
-                            <label for="trailName">Trail Name:</label>
-                            <input type="text" id="trailName" name="trailName" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailPark">Park:</label>
-                            <select id="trailPark" name="trailPark">
-                                <option value="">Select a Park</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailLength">Length (miles):</label>
-                            <input type="number" id="trailLength" name="trailLength" step="0.1" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailDifficulty">Difficulty:</label>
-                            <select id="trailDifficulty" name="trailDifficulty">
-                                <option value="easy">Easy</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="difficult">Difficult</option>
-                                <option value="expert">Expert</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailStatus">Status:</label>
-                            <select id="trailStatus" name="trailStatus">
-                                <option value="unhiked">Unhiked</option>
-                                <option value="hiked">Hiked</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailDate">Date Hiked:</label>
-                            <input type="date" id="trailDate" name="trailDate">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailBlog">Blog Post:</label>
-                            <textarea id="trailBlog" name="trailBlog" rows="6" placeholder="Write about your hiking experience..."></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="trailImages">Images:</label>
-                            <input type="file" id="trailImages" name="trailImages" multiple accept="image/*">
-                            <div class="file-limits">
-                                <small>Maximum 10 images • 10MB per image • Images stored on server</small>
-                                <small>Images are automatically compressed and optimized</small>
-                            </div>
-                            <div id="imagePreview" class="image-preview"></div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Save Trail</button>
-                            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Import Modal -->
-        <div id="importModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Import GeoJSON Trail</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form id="importForm">
-                        <div class="form-group">
-                            <label for="geojsonFile">Select GeoJSON File:</label>
-                            <input type="file" id="geojsonFile" name="geojsonFile" accept=".geojson,.json" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="importTrailName">Trail Name:</label>
-                            <input type="text" id="importTrailName" name="importTrailName" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="importTrailPark">Park:</label>
-                            <select id="importTrailPark" name="importTrailPark">
-                                <option value="">Select a Park</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="importTrailLength">Calculated Length (miles):</label>
-                            <input type="text" id="importTrailLength" name="importTrailLength" readonly placeholder="Will be calculated from GeoJSON">
-                        </div>
-                        
-                        <div id="geojsonPreview" class="geojson-preview"></div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Import Trail</button>
-                            <button type="button" class="btn btn-secondary" id="importCancelBtn">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <!-- About Modal -->
-        <div id="aboutModal" class="modal">
-            <div class="modal-content about-modal-content">
-                <div class="modal-header">
-                    <h2>Welcome to Trail Blogger!</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div class="about-section">
-                        <h3>About This Project</h3>
-                        <p>Hello! My name is Nathaniel. Trail Blogger is a personal hiking journal I built to document my trail adventures and preserve memories from the places I explore. I wanted a simple, ad-free platform where I could store GPS tracks, photos, and hiking notes without relying on third-party services or dealing with subscription fees.</p>
-                        
-                        <div style="text-align: center; margin: 2rem 0;">
-                            <img src="data/images/PXL_20250601_221102925_compressed.jpg" alt="Washing my dog after a hike" style="max-width: 60%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
-                        </div>
-                        
-                        <p>I built this because I kept forgetting which trails I'd done and which ones I wanted to try. I'd come back from a hike and think "this was great, I should remember this," but a few months later I couldn't recall the details. Writing down where, when, and what I thought about helps me actually remember these places.</p>
-                        
-                        <p>Having GPS tracks means I can see exactly where I went, and the photos help me remember what the trail actually looked like—not just what I think I remember.</p>
-                        
-                        <p>The statistics and maps give me a sense of what I've accomplished, which is nice motivation to get out there and explore more.</p>
-                        
-                        <p>This site serves as both a personal archive and a technical demonstration of how to build a lightweight trail tracking system using open-source tools. All trail data is stored in GeoJSON format, images are managed locally, and the entire system deploys to GitHub Pages for free hosting.</p>
-                        
-                        <p>If you're interested in building a similar system for your own hiking adventures, the complete source code and documentation are available below.</p>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>How It Works</h3>
-                        <p><strong>This site is read-only.</strong> You're viewing a static GitHub Pages site that displays my trail data. All trail information, GPS coordinates, descriptions, and images are stored in a GeoJSON file and deployed from my local development environment.</p>
-                        
-                        <ul class="about-list">
-                            <li><strong>Viewing:</strong> Browse trails, see photos, read descriptions, and explore the interactive map</li>
-                            <li><strong>Editing:</strong> All changes are made on a local Flask server, then deployed here</li>
-                            <li><strong>Data Storage:</strong> Trail data is stored in <code>data/trails.geojson</code> with images in <code>data/trail_images/</code></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>Creating Your Own Trail Journal</h3>
-                        <p>Want to track your own hiking adventures? Here's how to set up your own instance:</p>
-                        
-                        <h4>1. Get the Code</h4>
-                        <pre><code>git clone https://github.com/RealCaddish/trailBlogger.git
-cd trailBlogger</code></pre>
-                        
-                        <h4>2. Install Dependencies</h4>
-                        <pre><code>pip install -r requirements.txt</code></pre>
-                        
-                        <h4>3. Start the Flask Server (for editing)</h4>
-                        <pre><code>python server.py</code></pre>
-                        <p>Then open <code>http://localhost:5000</code> in your browser.</p>
-                        
-                        <h4>4. Add Your Trails</h4>
-                        <ul class="about-list">
-                            <li>Click "Add Trail" to create new trails</li>
-                            <li>Upload photos (automatically compressed)</li>
-                            <li>Add descriptions, dates, and trail details</li>
-                            <li>Import GPS tracks from your hiking app</li>
-                            <li>All changes save automatically to <code>data/trails.geojson</code></li>
-                        </ul>
-                        
-                        <h4>5. Deploy to GitHub Pages</h4>
-                        <pre><code>python deploy.py</code></pre>
-                        <p>This validates your data, commits changes, and pushes to GitHub. Your site will update in ~2 minutes!</p>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>Two-Environment System</h3>
-                        <div class="workflow-info">
-                            <div class="workflow-step">
-                                <h4>Localhost:5000 (Editing)</h4>
-                                <ul class="about-list">
-                                    <li>Add, edit, and delete trails</li>
-                                    <li>Upload and manage images</li>
-                                    <li>Change trail status (hiked/unhiked)</li>
-                                    <li>Create backups</li>
-                                    <li>Changes saved to local files</li>
-                                </ul>
-                            </div>
-                            <div class="workflow-step">
-                                <h4>GitHub Pages (Public Display)</h4>
-                                <ul class="about-list">
-                                    <li>Read-only static site</li>
-                                    <li>Fast, reliable hosting</li>
-                                    <li>Share with anyone</li>
-                                    <li>No server needed</li>
-                                    <li>Updates via git push</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>Key Features</h3>
-                        <ul class="about-list">
-                            <li><strong>Interactive Maps:</strong> Leaflet.js with trail GPS overlays</li>
-                            <li><strong>Image Management:</strong> Automatic compression and optimization</li>
-                            <li><strong>GeoJSON Storage:</strong> Portable, standard format for trail data</li>
-                            <li><strong>Backup System:</strong> Create and restore complete backups with <code>complete_backup.py</code></li>
-                            <li><strong>Deployment Tool:</strong> One-command deployment with validation</li>
-                            <li><strong>Mobile-Friendly:</strong> Responsive design for viewing on any device</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>Technologies Used</h3>
-                        <ul class="about-list">
-                            <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (vanilla)</li>
-                            <li><strong>Maps:</strong> Leaflet.js with OpenStreetMap tiles</li>
-                            <li><strong>Backend:</strong> Flask (Python) for local editing</li>
-                            <li><strong>Storage:</strong> GeoJSON files + file system for images</li>
-                            <li><strong>Hosting:</strong> GitHub Pages (free static hosting)</li>
-                            <li><strong>Deployment:</strong> Custom Python scripts with git automation</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="about-section">
-                        <h3>Repository & Documentation</h3>
-                        <p>Full source code, setup guides, and workflow documentation available at:</p>
-                        <p><a href="https://github.com/RealCaddish/trailBlogger" target="_blank">github.com/RealCaddish/trailBlogger</a></p>
-                        
-                        <p><strong>Helpful Docs:</strong></p>
-                        <ul class="about-list">
-                            <li><code>EDITING_WORKFLOW.md</code> - Complete editing and deployment guide</li>
-                            <li><code>BACKUP_RESTORE_GUIDE.md</code> - Backup and restore instructions</li>
-                            <li><code>QUICK_DEPLOY.md</code> - Quick reference for deployments</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="about-section" style="text-align: center; padding-top: 2rem; border-top: 1px solid #e0e0e0; margin-top: 2rem;">
-                        <p style="margin-bottom: 1rem;">
-                            <a href="#" id="contactLinkFromAbout" style="margin: 0 1rem; color: #007cbf; text-decoration: none; font-weight: 500;">Contact</a>
-                            <span style="color: #ccc;">|</span>
-                            <a href="https://nathanieldeaton.com" target="_blank" style="margin: 0 1rem; color: #007cbf; text-decoration: none; font-weight: 500;">Portfolio</a>
-                            <span style="color: #ccc;">|</span>
-                            <a href="https://github.com/RealCaddish" target="_blank" style="margin: 0 1rem; color: #007cbf; text-decoration: none; font-weight: 500;">GitHub</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Contact Modal -->
-        <div id="contactModal" class="modal">
-            <div class="modal-content about-modal-content">
-                <div class="modal-header">
-                    <h2>Contact</h2>
-                    <span class="close">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div class="about-section" style="text-align: center;">
-                        <div style="margin: 2rem 0;">
-                            <img id="contactPhoto" src="data/images/contact_photo.jpg" alt="Nathaniel Deaton" 
-                                 style="max-width: 300px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin: 0 auto; display: block;" />
-                        </div>
-                        
-                        <h3>Get In Touch</h3>
-                        <p>I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.</p>
-                        
-                        <div style="margin: 2rem 0;">
-                            <p style="font-size: 1.1rem; margin-bottom: 1rem;">
-                                <strong>Professional Inquiries</strong>
-                            </p>
-                            <p style="font-size: 1.2rem;">
-                                <a href="mailto:nathanielmakesmaps@gmail.com" 
-                                   style="color: #007cbf; text-decoration: none; font-weight: 500;">
-                                    <i class="fas fa-envelope" style="margin-right: 0.5rem;"></i>
-                                    nathanielmakesmaps@gmail.com
-                                </a>
-                            </p>
-                        </div>
-                        
-                        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;">
-                            <p style="margin-bottom: 1rem;">
-                                <a href="https://nathanieldeaton.com" target="_blank" 
-                                   style="margin: 0 1rem; color: #007cbf; text-decoration: none; font-weight: 500;">
-                                    <i class="fas fa-globe" style="margin-right: 0.5rem;"></i>Portfolio
-                                </a>
-                                <span style="color: #ccc;">|</span>
-                                <a href="https://github.com/RealCaddish" target="_blank" 
-                                   style="margin: 0 1rem; color: #007cbf; text-decoration: none; font-weight: 500;">
-                                    <i class="fab fa-github" style="margin-right: 0.5rem;"></i>GitHub
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hidden file input for restore functionality -->
-        <input type="file" id="restoreFileInput" accept=".json" style="display: none;">
-        <input type="file" id="restoreImagesInput" accept=".zip,.json" style="display: none;">
+    <div class="map-tools">
+      <button class="tool" id="toolLayers" title="Map layers"><svg class="icon"><use href="#i-layers"/></svg></button>
+      <button class="tool" id="toolLocate" title="Show my location"><svg class="icon"><use href="#i-locate"/></svg></button>
+      <button class="tool" id="toolFit" title="Zoom to all hikes"><svg class="icon"><use href="#i-fit"/></svg></button>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Configuration -->
-    <script src="config.js"></script>
-    
-    <!-- Custom JS - Load first -->
-    <script src="app.js?v=20241221"></script>
-    
-    <!-- Feature scripts - Load after app -->
-    <script src="disable_github_pages_editing.js"></script>
-    <script src="mobile_interface.js"></script>
+    <div class="layers-pop" id="layersPop" hidden>
+      <div class="layers-group">
+        <label><input type="checkbox" id="layerHikes" checked><span class="swatch hike"></span>Hikes</label>
+        <label><input type="checkbox" id="layerWish" checked><span class="swatch wish"></span>Wishlist</label>
+        <label><input type="checkbox" id="layerParks"><span class="swatch park"></span>Parks I've hiked in</label>
+        <label><input type="checkbox" id="layerStates"><span class="swatch state"></span>States I've hiked in</label>
+      </div>
+      <div class="layers-group">
+        <label><input type="radio" name="base" value="osm" checked>Streets</label>
+        <label><input type="radio" name="base" value="topo">Topo</label>
+        <label><input type="radio" name="base" value="sat">Satellite</label>
+      </div>
+    </div>
+
+    <section class="panel" id="panel" data-sheet="half">
+      <button class="sheet-handle" id="sheetHandle" aria-label="Expand or collapse the panel"><span></span></button>
+
+      <div class="view" id="viewList">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="hikes" role="tab">Hikes <b id="countHikes">0</b></button>
+          <button class="tab" data-tab="wishlist" role="tab">Wishlist <b id="countWish">0</b></button>
+        </div>
+        <label class="search">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input type="search" id="search" placeholder="Search trails, parks, states" autocomplete="off">
+        </label>
+        <div class="stats" id="stats"></div>
+        <div class="list" id="list"></div>
+      </div>
+
+      <div class="view" id="viewDetail" hidden>
+        <div class="detail-top">
+          <button class="btn btn-ghost btn-back" id="btnBack"><svg class="icon"><use href="#i-back"/></svg><span id="backLabel">All hikes</span></button>
+          <div class="detail-actions" id="detailActions"></div>
+        </div>
+        <h2 class="detail-name" id="dName"></h2>
+        <div class="chips" id="dMeta"></div>
+        <div class="companions" id="dCompanions"></div>
+        <div class="journal" id="dJournal"></div>
+        <div class="photos" id="dPhotos"></div>
+      </div>
+
+      <div class="view" id="viewRecord" hidden>
+        <div class="detail-top">
+          <button class="btn btn-ghost btn-back" id="btnRecordBack"><svg class="icon"><use href="#i-back"/></svg><span>Back</span></button>
+        </div>
+        <h2 class="detail-name">Record a hike</h2>
+        <p class="hint" id="recHint">Uses your phone's GPS. Keep the screen on for the most accurate track. When you finish, the track is saved as a hike if the editing server is running, or downloaded as a GPX file you can import later.</p>
+        <div class="rec-stats">
+          <div><b id="recTime">0:00</b><span>time</span></div>
+          <div><b id="recDist">0.0</b><span>miles</span></div>
+          <div><b id="recPts">0</b><span>points</span></div>
+          <div><b id="recAcc">–</b><span>accuracy</span></div>
+        </div>
+        <div class="rec-actions" id="recActions">
+          <button class="btn btn-primary btn-lg" id="recStart"><svg class="icon"><use href="#i-record"/></svg>Start recording</button>
+          <button class="btn btn-lg" id="recPause" hidden>Pause</button>
+          <button class="btn btn-primary btn-lg" id="recResume" hidden>Resume</button>
+          <button class="btn btn-lg btn-finish" id="recFinish" hidden><svg class="icon"><use href="#i-check"/></svg>Finish</button>
+          <button class="btn btn-ghost btn-danger" id="recDiscard" hidden>Discard</button>
+        </div>
+        <p class="hint small" id="recStatus"></p>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="dlg" id="editor">
+    <form method="dialog" class="dlg-body" id="editorForm" novalidate>
+      <div class="dlg-head">
+        <h2 id="editorTitle">Add hike</h2>
+        <button type="button" class="btn btn-ghost btn-icon" data-close><svg class="icon"><use href="#i-close"/></svg></button>
+      </div>
+
+      <div class="drop" id="drop">
+        <input type="file" id="trackFile" accept=".gpx,.geojson,.json,.kml,application/gpx+xml,application/geo+json,application/json" hidden>
+        <div id="dropText"><b>Drop a GPX, GeoJSON or KML file here</b> or tap to choose one</div>
+        <div class="drop-summary" id="dropSummary" hidden></div>
+      </div>
+
+      <div class="grid2">
+        <label class="field span2">Name<input type="text" id="fName" required maxlength="120" placeholder="Koomer Ridge"></label>
+        <label class="field" id="fDateWrap">Date<input type="date" id="fDate"></label>
+        <label class="field">Park<input type="text" id="fPark" placeholder="auto-detected"></label>
+        <label class="field">State or region<input type="text" id="fState" placeholder="auto-detected"></label>
+        <label class="field">Country<input type="text" id="fCountry" placeholder="auto-detected"></label>
+        <label class="field span2" id="fCompanionsWrap">Who came along<input type="text" id="fCompanions" placeholder="Dad, Maple (dog)"></label>
+        <label class="field span2"><span id="fJournalLabel">Journal</span><textarea id="fJournal" rows="7" placeholder="What was it like? Blank lines start a new paragraph. **bold** and *italic* work."></textarea></label>
+      </div>
+
+      <div class="field" id="fPhotosWrap">
+        <div class="field-row">
+          <span>Photos</span>
+          <label class="btn btn-ghost btn-sm">
+            <svg class="icon"><use href="#i-photo"/></svg>Add photos
+            <input type="file" id="fPhotos" accept="image/*" multiple hidden>
+          </label>
+        </div>
+        <div class="photo-grid" id="photoGrid"></div>
+      </div>
+
+      <div class="dlg-foot">
+        <button type="button" class="btn btn-ghost btn-danger" id="btnDelete" hidden>Delete</button>
+        <span class="grow"></span>
+        <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btnSave">Save</button>
+      </div>
+      <p class="hint small" id="editorStatus"></p>
+    </form>
+  </dialog>
+
+  <dialog class="dlg dlg-lightbox" id="lightbox">
+    <button class="btn btn-ghost btn-icon lb-close" data-close><svg class="icon"><use href="#i-close"/></svg></button>
+    <img id="lbImg" alt="">
+    <div class="lb-caption" id="lbCaption"></div>
+  </dialog>
+
+  <dialog class="dlg" id="about">
+    <div class="dlg-body prose">
+      <div class="dlg-head"><h2>About Trail Blogger</h2><button class="btn btn-ghost btn-icon" data-close><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <p>Hello! My name is Nathaniel. Trail Blogger is a personal hiking journal I built to document my trail adventures and preserve memories from the places I explore. I wanted a simple, ad-free platform where I could store GPS tracks, photos, and hiking notes without relying on third-party services or dealing with subscription fees.</p>
+      <p class="center"><img src="data/images/PXL_20250601_221102925_compressed.jpg" alt="Washing my dog after a hike" loading="lazy"></p>
+      <p>I built this because I kept forgetting which trails I'd done and which ones I wanted to try. I'd come back from a hike and think "this was great, I should remember this," but a few months later I couldn't recall the details. Writing down where, when, and what I thought about helps me actually remember these places.</p>
+      <p>Having GPS tracks means I can see exactly where I went, and the photos help me remember what the trail actually looked like, not just what I think I remember.</p>
+      <h3>How it works</h3>
+      <p>Everything you see is plain files in a git repository: one GeoJSON file of hikes, one of wishlist trails, and a folder of photos. The site is static and works offline once loaded. I add hikes by recording them on my phone or importing a GPX file, on a small local editing server, then push to GitHub.</p>
+      <p>The code is open source at <a href="https://github.com/RealCaddish/trailBlogger" target="_blank" rel="noopener">github.com/RealCaddish/trailBlogger</a>. Trail outlines in the wishlist come from <a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap</a>.</p>
+      <p class="center links"><a href="#" data-menu="contact">Contact</a> · <a href="https://nathanieldeaton.com" target="_blank" rel="noopener">Portfolio</a> · <a href="https://github.com/RealCaddish" target="_blank" rel="noopener">GitHub</a></p>
+    </div>
+  </dialog>
+
+  <dialog class="dlg" id="contact">
+    <div class="dlg-body prose center">
+      <div class="dlg-head"><h2>Contact</h2><button class="btn btn-ghost btn-icon" data-close><svg class="icon"><use href="#i-close"/></svg></button></div>
+      <p><img class="portrait" src="data/images/contact_photo.jpg" alt="Nathaniel Deaton" loading="lazy" onerror="this.parentElement.hidden = true"></p>
+      <p>I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.</p>
+      <p class="big"><a href="mailto:nathanielmakesmaps@gmail.com">nathanielmakesmaps@gmail.com</a></p>
+      <p class="links"><a href="https://nathanieldeaton.com" target="_blank" rel="noopener">Portfolio</a> · <a href="https://github.com/RealCaddish" target="_blank" rel="noopener">GitHub</a></p>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="app.js"></script>
 </body>
 </html>

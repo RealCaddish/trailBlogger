@@ -236,3 +236,7 @@ logs/
 # OS specific
 .DS_Store
 Thumbs.db
+# Trail Blogger v2
+data/backups/
+data/exports/
+*.geojson.tmp
